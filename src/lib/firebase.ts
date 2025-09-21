@@ -62,97 +62,107 @@ export interface Combo {
 
 // Firebase service functions
 export const firebaseService = {
-  // Fetch categories (ordered by name to avoid complex indexes)
+  // Fetch categories (client-side sorting to avoid index requirements)
   async getCategories(): Promise<Category[]> {
     try {
       const q = query(
         collection(db, 'categories'),
-        where('isActive', '==', true),
-        orderBy('name') // Simple index that should exist by default
+        where('isActive', '==', true)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const categories = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Category));
+      
+      // Sort client-side by name
+      return categories.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       console.error('Error fetching categories:', error);
       throw error;
     }
   },
 
-  // Fetch products by category (ordered by name to avoid complex indexes)
+  // Fetch products by category (client-side sorting to avoid index requirements)
   async getProductsByCategory(categoryId: string): Promise<Product[]> {
     try {
       const q = query(
         collection(db, 'products'),
         where('categoryId', '==', categoryId),
-        where('isActive', '==', true),
-        orderBy('name') // Simple index
+        where('isActive', '==', true)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const products = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Product));
+      
+      // Sort client-side by name
+      return products.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       console.error('Error fetching products by category:', error);
       throw error;
     }
   },
 
-  // Fetch all active products (ordered by name)
+  // Fetch all active products (client-side sorting to avoid index requirements)
   async getProducts(): Promise<Product[]> {
     try {
       const q = query(
         collection(db, 'products'),
-        where('isActive', '==', true),
-        orderBy('name')
+        where('isActive', '==', true)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const products = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Product));
+      
+      // Sort client-side by name
+      return products.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       console.error('Error fetching products:', error);
       throw error;
     }
   },
 
-  // Fetch combos (ordered by name to avoid complex indexes)
+  // Fetch combos (client-side sorting to avoid index requirements)
   async getCombos(): Promise<Combo[]> {
     try {
       const q = query(
         collection(db, 'combos'),
-        where('isActive', '==', true),
-        orderBy('name')
+        where('isActive', '==', true)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const combos = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Combo));
+      
+      // Sort client-side by name
+      return combos.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       console.error('Error fetching combos:', error);
       throw error;
     }
   },
 
-  // Fetch featured combos
+  // Fetch featured combos (client-side sorting to avoid index requirements)
   async getFeaturedCombos(): Promise<Combo[]> {
     try {
       const q = query(
         collection(db, 'combos'),
         where('isActive', '==', true),
-        where('isFeatured', '==', true),
-        orderBy('name')
+        where('isFeatured', '==', true)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const combos = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Combo));
+      
+      // Sort client-side by name
+      return combos.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       console.error('Error fetching featured combos:', error);
       throw error;
