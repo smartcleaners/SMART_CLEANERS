@@ -4,12 +4,13 @@ import { Category, Product, firebaseService } from '@/lib/firebase';
 import { CategoryCard } from '@/components/categories/CategoryCard';
 import { ProductCard } from '@/components/products/ProductCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Grid3X3 } from 'lucide-react';
+import { ArrowLeft, Grid3X3, Package } from 'lucide-react';
 
 export const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [productsLoading, setProductsLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,10 +18,15 @@ export const Categories: React.FC = () => {
   const selectedCategoryId = searchParams.get('category');
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
       try {
-        const categoriesData = await firebaseService.getCategories();
+        const [categoriesData, allProductsData] = await Promise.all([
+          firebaseService.getCategories(),
+          firebaseService.getProducts()
+        ]);
+        
         setCategories(categoriesData);
+        setAllProducts(allProductsData);
         
         // If there's a category ID in URL, load that category and its products
         if (selectedCategoryId) {
@@ -29,15 +35,18 @@ export const Categories: React.FC = () => {
             setSelectedCategory(category);
             loadProductsForCategory(selectedCategoryId);
           }
+        } else {
+          // By default, show all products
+          setProducts(allProductsData);
         }
       } catch (error) {
-        console.error('Error loading categories:', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadCategories();
+    loadData();
   }, [selectedCategoryId]);
 
   const loadProductsForCategory = async (categoryId: string) => {
@@ -61,9 +70,9 @@ export const Categories: React.FC = () => {
     }
   };
 
-  const handleBackToCategories = () => {
+  const handleShowAllProducts = () => {
     setSelectedCategory(null);
-    setProducts([]);
+    setProducts(allProducts);
     setSearchParams({});
   };
 
@@ -76,96 +85,125 @@ export const Categories: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 px-4 py-6">
+    <div className="max-w-7xl mx-auto space-y-6 px-4 py-6">
       {/* Header */}
       <div className="space-y-4">
-        {selectedCategory ? (
-          <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
+          {selectedCategory && (
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={handleBackToCategories}
+              onClick={handleShowAllProducts}
               className="p-2"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-section">{selectedCategory.name}</h1>
-              <p className="text-sm text-muted-foreground">{selectedCategory.description}</p>
+          )}
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              {selectedCategory ? (
+                <Package className="h-6 w-6 text-primary" />
+              ) : (
+                <Grid3X3 className="h-6 w-6 text-primary" />
+              )}
+              <h1 className="text-2xl font-bold">
+                {selectedCategory ? selectedCategory.name : 'All Products'}
+              </h1>
             </div>
-          </div>
-        ) : (
-          <div className="text-center space-y-2">
-            <Grid3X3 className="h-8 w-8 text-primary mx-auto" />
-            <h1 className="text-section">Product Categories</h1>
             <p className="text-muted-foreground">
-              Choose a category to explore our professional cleaning solutions
+              {selectedCategory 
+                ? selectedCategory.description 
+                : 'Browse all our professional cleaning solutions'
+              }
             </p>
+          </div>
+        </div>
+
+        {/* Category Filter Pills */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={!selectedCategory ? "default" : "outline"}
+            size="sm"
+            onClick={handleShowAllProducts}
+            className="text-sm"
+          >
+            All Products
+          </Button>
+          {categories.map((category) => (
+            <Button
+              key={category.id}
+              variant={selectedCategory?.id === category.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleCategoryClick(category.id)}
+              className="text-sm"
+            >
+              {category.name}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Products Grid */}
+      <div className="space-y-4">
+        {productsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : products.length > 0 ? (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {products.length} products found
+              </p>
+            </div>
+            {/* Responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {products.map((product) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product}
+                  className="animate-scale-in"
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-12 space-y-4">
+            <div className="text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">
+                {selectedCategory ? 'No products found in this category' : 'No products available'}
+              </p>
+              <p className="text-sm">
+                {selectedCategory ? 'Check back soon for new arrivals!' : 'We\'re updating our product catalog.'}
+              </p>
+            </div>
+            {selectedCategory && (
+              <Button 
+                variant="outline"
+                onClick={handleShowAllProducts}
+              >
+                View All Products
+              </Button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Content */}
-      {selectedCategory ? (
-        /* Products Grid */
+      {/* Categories Overview Section (only show when viewing all products and no products) */}
+      {!selectedCategory && products.length === 0 && categories.length > 0 && (
         <div className="space-y-4">
-          {productsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : products.length > 0 ? (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {products.length} products found
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {products.map((product) => (
-                  <ProductCard 
-                    key={product.id} 
-                    product={product}
-                    className="animate-scale-in"
-                  />
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-12 space-y-4">
-              <div className="text-muted-foreground">
-                <Grid3X3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No products found in this category</p>
-                <p className="text-sm">Check back soon for new arrivals!</p>
-              </div>
-              <Button 
-                variant="outline"
-                onClick={handleBackToCategories}
-              >
-                Browse Other Categories
-              </Button>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Categories Grid */
-        <div className="grid grid-cols-2 gap-4">
-          {categories.map((category) => (
-            <CategoryCard 
-              key={category.id} 
-              category={category}
-              onClick={handleCategoryClick}
-              className="animate-scale-in"
-            />
-          ))}
-        </div>
-      )}
-
-      {!selectedCategory && categories.length === 0 && (
-        <div className="text-center py-12 space-y-4">
-          <div className="text-muted-foreground">
-            <Grid3X3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No categories available</p>
-            <p className="text-sm">We're updating our product catalog.</p>
+          <h2 className="text-xl font-semibold">Browse by Category</h2>
+          {/* Responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {categories.map((category) => (
+              <CategoryCard 
+                key={category.id} 
+                category={category}
+                onClick={handleCategoryClick}
+                className="animate-scale-in"
+              />
+            ))}
           </div>
         </div>
       )}

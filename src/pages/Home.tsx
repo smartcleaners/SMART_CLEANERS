@@ -32,9 +32,9 @@ export const Home: React.FC = () => {
           firebaseService.getFeaturedCombos()
         ]);
         
-        setCategories(categoriesData.slice(0, 4)); // Show first 4 categories
-        setProducts(productsData.slice(0, 6)); // Show first 6 products
-        setFeaturedCombos(combosData.slice(0, 3)); // Show first 3 combos
+        setCategories(categoriesData.slice(0, 8)); // Show more categories for desktop
+        setProducts(productsData.slice(0, 8)); // Show more products for desktop
+        setFeaturedCombos(combosData.slice(0, 3)); // Keep combos the same
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -54,7 +54,7 @@ export const Home: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Hero Section */}
       <section className="gradient-hero text-white px-4 py-12">
         <div className="space-y-6 animate-fade-in">
@@ -91,7 +91,7 @@ export const Home: React.FC = () => {
 
       {/* Trust Indicators */}
       <section className="px-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
           <div className="text-center p-4">
             <Shield className="h-8 w-8 text-accent mx-auto mb-2" />
             <p className="text-sm font-medium">Certified Quality</p>
@@ -121,7 +121,8 @@ export const Home: React.FC = () => {
           </Button>
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
+        {/* Responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {categories.map((category) => (
             <CategoryCard 
               key={category.id} 
@@ -164,7 +165,8 @@ export const Home: React.FC = () => {
       <section className="px-4 space-y-4">
         <h2 className="text-section">Popular Products</h2>
         
-        <div className="grid grid-cols-2 gap-4">
+        {/* Responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {products.map((product) => (
             <ProductCard 
               key={product.id} 
@@ -179,7 +181,7 @@ export const Home: React.FC = () => {
       <section className="px-4 space-y-4 bg-muted py-8 -mx-4">
         <h2 className="text-section text-center">Trusted by Industry Leaders</h2>
         
-        <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 max-w-4xl mx-auto">
           {[
             {
               name: "Grand Hotel Mumbai",

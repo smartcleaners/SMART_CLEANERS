@@ -11,10 +11,10 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick, c
   return (
     <div 
       onClick={() => onClick(category.id)}
-      className={`card-elevated p-4 cursor-pointer space-y-3 ${className}`}
+      className={`card-elevated p-3 cursor-pointer space-y-3 hover:shadow-lg transition-all duration-300 ${className}`}
     >
-      {/* Category Image */}
-      <div className="aspect-square overflow-hidden bg-muted">
+      {/* Category Image with fixed aspect ratio */}
+      <div className="aspect-square overflow-hidden bg-muted rounded-lg">
         <img 
           src={category.imageUrl} 
           alt={category.name}
@@ -27,9 +27,9 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick, c
       </div>
 
       {/* Category Info */}
-      <div className="space-y-2">
-        <h3 className="text-card-title text-center">{category.name}</h3>
-        <p className="text-sm text-muted-foreground text-center line-clamp-2">
+      <div className="space-y-1">
+        <h3 className="text-sm font-semibold text-center line-clamp-1">{category.name}</h3>
+        <p className="text-xs text-muted-foreground text-center line-clamp-2">
           {category.description}
         </p>
       </div>
