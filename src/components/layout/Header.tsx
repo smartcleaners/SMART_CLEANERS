@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ShoppingCart, Search } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,9 @@ export const Header: React.FC = () => {
       <div className="flex items-center justify-between h-16 px-4">
         {/* Logo */}
         <div className="flex items-center">
-          <h1 className="text-xl font-bold text-primary">Smart Cleaners</h1>
+          <Link to="/" className="hover:opacity-80 transition-opacity">
+            <h1 className="text-xl font-bold text-primary">Smart Cleaners</h1>
+          </Link>
         </div>
 
         {/* Right side icons */}
@@ -22,7 +25,10 @@ export const Header: React.FC = () => {
           </button>
           
           {/* Cart icon with badge */}
-          <button className="relative p-2 hover:bg-muted transition-colors">
+          <Link 
+            to="/cart" 
+            className="relative p-2 hover:bg-muted transition-colors block"
+          >
             <ShoppingCart className="h-5 w-5" />
             {itemCount > 0 && (
               <Badge 
@@ -32,7 +38,7 @@ export const Header: React.FC = () => {
                 {itemCount > 99 ? '99+' : itemCount}
               </Badge>
             )}
-          </button>
+          </Link>
         </div>
       </div>
     </header>

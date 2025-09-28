@@ -10,6 +10,8 @@ import { Categories } from "./pages/Categories";
 import { Combos } from "./pages/Combos";
 import { BulkOrders } from "./pages/BulkOrders";
 import NotFound from "./pages/NotFound";
+import CartPage from "./pages/CartPage";
+import { CheckOut } from "./pages/CheckOut";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
               <Route path="/categories" element={<Categories />} />
               <Route path="/combos" element={<Combos />} />
               <Route path="/bulk-orders" element={<BulkOrders />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckOut />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

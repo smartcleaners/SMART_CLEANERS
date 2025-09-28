@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection,addDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyDBp_vEVahkIY216SmAkceBGcL_h6DVUhs",
@@ -24,6 +25,58 @@ export interface Category {
   imageUrl: string;
   isActive: boolean;
   createdAt: Timestamp;
+}
+export interface Order {
+  id?: string;
+  orderId: string;
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentMethod: string;
+  createdAt: Date | Timestamp;
+  customer: {
+    name: string;
+    phone: string;
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      pincode: string;
+      fullAddress: string;
+    };
+  };
+  items: Array<{
+    productId: string;
+    productDetails: {
+      name: string;
+      sku: string;
+      categoryId: string;
+      originalPrice: number;
+      salePrice?: number;
+      weight: string;
+      dimensions: string;
+      description: string;
+      ingredients: string;
+      instructions: string;
+      images: string[];
+    };
+    quantity: number;
+    unitPrice: number;
+    bulkDiscountPerUnit: number;
+    finalUnitPrice: number;
+    lineTotal: number;
+    bulkDiscountApplied: string | null;
+  }>;
+  pricing: {
+    subtotal: number;
+    bulkDiscountTotal: number;
+    shippingCost: number;
+    finalTotal: number;
+    itemCount: number;
+  };
+  flags: {
+    isNewCustomer: boolean;
+    requiresVerification: boolean;
+    priority: 'low' | 'medium' | 'high';
+  };
 }
 
 export interface Product {
@@ -165,6 +218,20 @@ export const firebaseService = {
       return combos.sort((a, b) => a.name.localeCompare(b.name));
     } catch (error) {
       console.error('Error fetching featured combos:', error);
+      throw error;
+    }
+  },
+
+  async createOrder(orderData: Omit<Order, 'id'>): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, 'orders'), {
+        ...orderData,
+        createdAt: Timestamp.now(), // Convert to Firestore Timestamp
+      });
+      console.log('Order created with ID:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating order:', error);
       throw error;
     }
   }
