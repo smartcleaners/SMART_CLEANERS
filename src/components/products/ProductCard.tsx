@@ -21,6 +21,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = '
   const handleAddToCart = () => {
     addItem(product);
   };
+  // hello world
 
   return (
     <div className={`card-product p-4 space-y-3 ${className}`}>
