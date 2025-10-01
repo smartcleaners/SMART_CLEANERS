@@ -21,6 +21,7 @@ export const CheckOut: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -40,7 +41,6 @@ export const CheckOut: React.FC = () => {
       [name]: value
     }));
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -88,14 +88,13 @@ export const CheckOut: React.FC = () => {
     try {
       const currentOrderId = `ORD_${Date.now()}`;
       
-      // Prepare order data for Firebase
       const orderData = {
         orderId: currentOrderId,
         status: 'pending',
-        paymentMethod: 'cash_on_delivery',
+        paymentMethod: paymentMethod === 'cash' ? 'cash_on_delivery' : 'online_payment',
+        paymentStatus: paymentMethod === 'cash' ? 'pending' : 'awaiting_payment',
         createdAt: new Date(),
         
-        // Customer information
         customer: {
           name: formData.name.trim(),
           phone: formData.phone.trim(),
@@ -108,7 +107,6 @@ export const CheckOut: React.FC = () => {
           }
         },
         
-        // Order items with detailed product information
         items: items.map(item => {
           const itemPrice = item.product.salePrice || item.product.price;
           const bulkDiscount = calculateBulkDiscount(item.quantity, itemPrice);
@@ -138,7 +136,6 @@ export const CheckOut: React.FC = () => {
           };
         }),
         
-        // Order totals
         pricing: {
           subtotal: total + totalBulkSavings,
           bulkDiscountTotal: totalBulkSavings,
@@ -147,7 +144,6 @@ export const CheckOut: React.FC = () => {
           itemCount: itemCount
         },
         
-        // Order flags for admin
         flags: {
           isNewCustomer: true,
           requiresVerification: total > 10000,
@@ -155,12 +151,16 @@ export const CheckOut: React.FC = () => {
         }
       };
       
-      // Save to Firebase
       await firebaseService.createOrder(orderData);
       
       setOrderId(currentOrderId);
       setOrderPlaced(true);
       clearCart();
+      
+      if (paymentMethod === 'online') {
+        const upiLink = `upi://pay?pa=9014632639@ybl&pn=SUDIGOLLU%20HARI%20BABU&mc=0000&mode=02&purpose=00&am=${total.toFixed(2)}`;
+        window.location.href = upiLink;
+      }
       
     } catch (error) {
       console.error('Error placing order:', error);
@@ -199,7 +199,9 @@ export const CheckOut: React.FC = () => {
             <div className="bg-muted/50 rounded-lg p-4 mb-6">
               <p className="font-medium">Order ID: {orderId}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                You will receive a confirmation call shortly
+                {paymentMethod === 'online' 
+                  ? 'Complete your payment to confirm the order'
+                  : 'You will receive a confirmation call shortly'}
               </p>
             </div>
           </div>
@@ -218,7 +220,6 @@ export const CheckOut: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" className="p-2">
           <ArrowLeft className="h-4 w-4" />
@@ -235,9 +236,7 @@ export const CheckOut: React.FC = () => {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Customer Information Form */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Personal Information */}
           <div className="card-product p-6 space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <User className="h-5 w-5 text-primary" />
@@ -278,7 +277,6 @@ export const CheckOut: React.FC = () => {
             </div>
           </div>
 
-          {/* Delivery Address */}
           <div className="card-product p-6 space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="h-5 w-5 text-primary" />
@@ -351,32 +349,60 @@ export const CheckOut: React.FC = () => {
             </div>
           </div>
 
-          {/* Payment Method */}
           <div className="card-product p-6 space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold">Payment Method</h2>
             </div>
             
-            <div className="flex items-center gap-3 p-4 bg-accent/10 rounded-lg border border-accent/20">
-              <Banknote className="h-6 w-6 text-accent" />
-              <div className="flex-1">
-                <p className="font-medium">Cash on Delivery</p>
-                <p className="text-sm text-muted-foreground">Pay when your order arrives</p>
+            <div className="space-y-3">
+              <div 
+                onClick={() => setPaymentMethod('cash')}
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  paymentMethod === 'cash' 
+                    ? 'border-accent bg-accent/10' 
+                    : 'border-gray-200 hover:border-accent/50'
+                }`}
+              >
+                <Banknote className={`h-6 w-6 ${paymentMethod === 'cash' ? 'text-accent' : 'text-muted-foreground'}`} />
+                <div className="flex-1">
+                  <p className="font-medium">Cash on Delivery</p>
+                  <p className="text-sm text-muted-foreground">Pay when your order arrives</p>
+                </div>
+                {paymentMethod === 'cash' && (
+                  <Badge variant="secondary" className="bg-accent/20 text-accent">
+                    Selected
+                  </Badge>
+                )}
               </div>
-              <Badge variant="secondary" className="bg-accent/20 text-accent">
-                Available
-              </Badge>
+
+              <div 
+                onClick={() => setPaymentMethod('online')}
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  paymentMethod === 'online' 
+                    ? 'border-accent bg-accent/10' 
+                    : 'border-gray-200 hover:border-accent/50'
+                }`}
+              >
+                <Phone className={`h-6 w-6 ${paymentMethod === 'online' ? 'text-accent' : 'text-muted-foreground'}`} />
+                <div className="flex-1">
+                  <p className="font-medium">Pay Online (UPI)</p>
+                  <p className="text-sm text-muted-foreground">Pay via Google Pay, PhonePe, Paytm</p>
+                </div>
+                {paymentMethod === 'online' && (
+                  <Badge variant="secondary" className="bg-accent/20 text-accent">
+                    Selected
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Order Summary */}
         <div className="space-y-6">
           <div className="card-product p-6 space-y-4">
             <h2 className="text-lg font-semibold">Order Summary</h2>
             
-            {/* Order Items */}
             <div className="space-y-3 max-h-60 overflow-y-auto">
               {items.map((item) => (
                 <div key={item.product.id} className="flex gap-3 text-sm">
