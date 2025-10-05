@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Category, Product, firebaseService } from '@/lib/firebase';
 import { CategoryCard } from '@/components/categories/CategoryCard';
 import { ProductCard } from '@/components/products/ProductCard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Grid3X3, Package } from 'lucide-react';
+
 
 export const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -16,6 +17,8 @@ export const Categories: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const selectedCategoryId = searchParams.get('category');
+    const navigate = useNavigate();
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -156,13 +159,15 @@ export const Categories: React.FC = () => {
                 {products.length} products found
               </p>
             </div>
-            {/* Responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop */}
+            
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {products.map((product) => (
                 <ProductCard 
                   key={product.id} 
                   product={product}
                   className="animate-scale-in"
+                onClick={() => navigate(`/products/${product.id}`)}
+
                 />
               ))}
             </div>

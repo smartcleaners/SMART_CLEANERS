@@ -12,6 +12,7 @@ import { BulkOrders } from "./pages/BulkOrders";
 import NotFound from "./pages/NotFound";
 import CartPage from "./pages/CartPage";
 import { CheckOut } from "./pages/CheckOut";
+import { ProductDetails } from "./pages/ProductPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/combos" element={<Combos />} />
               <Route path="/bulk-orders" element={<BulkOrders />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/products/:productId" element={<ProductDetails />} />
               <Route path="/checkout" element={<CheckOut />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

@@ -13,15 +13,21 @@ import {
   Truck, 
   Shield, 
   Clock,
-  ChevronRight 
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 
 export const Home: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [featuredCombos, setFeaturedCombos] = useState<Combo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoryPage, setCategoryPage] = useState(0);
+  const [productPage, setProductPage] = useState(0);
   const navigate = useNavigate();
+  
+  const ITEMS_PER_PAGE = 4;
 
   useEffect(() => {
     const loadData = async () => {
@@ -32,9 +38,22 @@ export const Home: React.FC = () => {
           firebaseService.getFeaturedCombos()
         ]);
         
-        setCategories(categoriesData.slice(0, 8)); // Show more categories for desktop
-        setProducts(productsData.slice(0, 8)); // Show more products for desktop
-        setFeaturedCombos(combosData.slice(0, 3)); // Keep combos the same
+        setAllCategories(categoriesData);
+        setAllProducts(productsData);
+        
+        // Filter for 5-liter cans with discounts and sort by discount percentage
+        const fiveLiterProducts = productsData
+          .filter(p => 
+            p.weight?.includes('5') && 
+            (p.weight?.toLowerCase().includes('liter') || p.weight?.toLowerCase().includes('l')) &&
+            p.salePrice && 
+            p.salePrice > 0
+          )
+          .sort((a, b) => (b.salePrice || 0) - (a.salePrice || 0))
+          .slice(0, 4);
+        
+        setFeaturedProducts(fiveLiterProducts);
+        setFeaturedCombos(combosData.slice(0, 3));
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -44,6 +63,19 @@ export const Home: React.FC = () => {
 
     loadData();
   }, []);
+
+  const paginatedCategories = allCategories.slice(
+    categoryPage * ITEMS_PER_PAGE,
+    (categoryPage + 1) * ITEMS_PER_PAGE
+  );
+
+  const paginatedProducts = allProducts.slice(
+    productPage * ITEMS_PER_PAGE,
+    (productPage + 1) * ITEMS_PER_PAGE
+  );
+
+  const totalCategoryPages = Math.ceil(allCategories.length / ITEMS_PER_PAGE);
+  const totalProductPages = Math.ceil(allProducts.length / ITEMS_PER_PAGE);
 
   if (loading) {
     return (
@@ -121,9 +153,9 @@ export const Home: React.FC = () => {
           </Button>
         </div>
         
-        {/* Responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {categories.map((category) => (
+        {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {paginatedCategories.map((category) => (
             <CategoryCard 
               key={category.id} 
               category={category}
@@ -132,6 +164,31 @@ export const Home: React.FC = () => {
             />
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {totalCategoryPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCategoryPage(prev => Math.max(0, prev - 1))}
+              disabled={categoryPage === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {categoryPage + 1} of {totalCategoryPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCategoryPage(prev => Math.min(totalCategoryPages - 1, prev + 1))}
+              disabled={categoryPage === totalCategoryPages - 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* Featured Combos */}
@@ -161,20 +218,46 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-      {/* Featured Products */}
+      {/* {featuredProducts.length > 0 && (
+        <section className="px-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-section">Best Deals - 5 Liter Cans</h2>
+            <Badge variant="destructive" className="animate-pulse">
+              Maximum Discounts
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {featuredProducts.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                product={product}
+                  onClick={() => navigate(`/products/${product.id}`)}
+                className="animate-scale-in"
+              />
+            ))}
+          </div>
+        </section>
+      )} */}
+
+      {/* Popular Products */}
       <section className="px-4 space-y-4">
         <h2 className="text-section">Popular Products</h2>
         
-        {/* Responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((product) => (
+        {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {featuredProducts.map((product) => (
             <ProductCard 
               key={product.id} 
               product={product}
               className="animate-scale-in"
+                                onClick={() => navigate(`/products/${product.id}`)}
+
             />
           ))}
         </div>
+
+     
       </section>
 
       {/* Testimonials */}
@@ -228,4 +311,4 @@ export const Home: React.FC = () => {
       </section>
     </div>
   );
-};
+}
