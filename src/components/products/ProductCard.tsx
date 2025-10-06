@@ -9,6 +9,8 @@ interface ProductCardProps {
   onClick?: () => void;
 }
 
+// yoo
+
 export const ProductCard: React.FC<ProductCardProps> = ({ 
   product, 
   className = '',
