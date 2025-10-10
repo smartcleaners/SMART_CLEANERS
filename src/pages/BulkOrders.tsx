@@ -179,7 +179,7 @@ export const BulkOrders: React.FC = () => {
             </div>
             <div>
               <h3 className="font-medium">Call Us</h3>
-              <p className="text-sm text-muted-foreground">+91 98765 43210</p>
+              <p className="text-sm text-muted-foreground">+91 9014632639/+91 8801800362</p>
             </div>
           </Card>
 
@@ -189,7 +189,7 @@ export const BulkOrders: React.FC = () => {
             </div>
             <div>
               <h3 className="font-medium">Email Us</h3>
-              <p className="text-sm text-muted-foreground">bulk@smartcleaners.com</p>
+              <p className="text-sm text-muted-foreground">smartcleaners.shop@gmail.com</p>
             </div>
           </Card>
         </div>
