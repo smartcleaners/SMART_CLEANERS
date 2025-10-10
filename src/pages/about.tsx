@@ -43,7 +43,7 @@ export const AboutUs = () => {
                       <Award className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900">1 year</h3>
+                      <h3 className="font-bold text-gray-900">2 years+</h3>
                       <p className="text-gray-600">Of trusted service</p>
                     </div>
                   </div>
@@ -223,16 +223,16 @@ export const AboutUs = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="group bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Phone className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Phone className="w-6 h-6 text-cyan-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">Phone</h3>
               </div>
               <div className="space-y-3">
-                <a href="tel:9014632639" className="block text-lg text-blue-600 hover:text-blue-700 font-semibold transition">
+                <a href="tel:9014632639" className="block text-lg text-cyan-600 hover:text-cyan-700 font-semibold transition">
                   90146 32639
                 </a>
-                <a href="tel:8801800362" className="block text-lg text-blue-600 hover:text-blue-700 font-semibold transition">
+                <a href="tel:8801800362" className="block text-lg text-cyan-600 hover:cyan-blue-700 font-semibold transition">
                   88018 00362
                 </a>
               </div>
