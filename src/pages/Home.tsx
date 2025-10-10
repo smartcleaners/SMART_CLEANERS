@@ -23,11 +23,20 @@ export const Home: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [featuredCombos, setFeaturedCombos] = useState<Combo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categoryPage, setCategoryPage] = useState(0);
   const [productPage, setProductPage] = useState(0);
   const navigate = useNavigate();
   
   const ITEMS_PER_PAGE = 4;
+
+  // Helper function to sort products by serialNo
+  const sortBySerialNo = (products: Product[]): Product[] => {
+    return products.sort((a, b) => {
+      if (a.serialNo === undefined && b.serialNo === undefined) return 0;
+      if (a.serialNo === undefined) return 1;
+      if (b.serialNo === undefined) return -1;
+      return a.serialNo - b.serialNo;
+    });
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -41,18 +50,16 @@ export const Home: React.FC = () => {
         setAllCategories(categoriesData);
         setAllProducts(productsData);
         
-        // Filter for 5-liter cans with discounts and sort by discount percentage
+        // Filter for 5-liter cans with discounts and sort by serialNo
         const fiveLiterProducts = productsData
           .filter(p => 
             p.weight?.includes('5') && 
             (p.weight?.toLowerCase().includes('liter') || p.weight?.toLowerCase().includes('l')) &&
             p.salePrice && 
             p.salePrice > 0
-          )
-          .sort((a, b) => (b.salePrice || 0) - (a.salePrice || 0))
-          .slice(0, 4);
+          );
         
-        setFeaturedProducts(fiveLiterProducts);
+        setFeaturedProducts(fiveLiterProducts.slice(0, 4));
         setFeaturedCombos(combosData.slice(0, 3));
       } catch (error) {
         console.error('Error loading data:', error);
@@ -64,17 +71,11 @@ export const Home: React.FC = () => {
     loadData();
   }, []);
 
-  const paginatedCategories = allCategories.slice(
-    categoryPage * ITEMS_PER_PAGE,
-    (categoryPage + 1) * ITEMS_PER_PAGE
-  );
-
   const paginatedProducts = allProducts.slice(
     productPage * ITEMS_PER_PAGE,
     (productPage + 1) * ITEMS_PER_PAGE
   );
 
-  const totalCategoryPages = Math.ceil(allCategories.length / ITEMS_PER_PAGE);
   const totalProductPages = Math.ceil(allProducts.length / ITEMS_PER_PAGE);
 
   if (loading) {
@@ -139,58 +140,6 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="px-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-section">Shop by Category</h2>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/categories')}
-            className="text-primary"
-          >
-            View All <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-        
-        {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {paginatedCategories.map((category) => (
-            <CategoryCard 
-              key={category.id} 
-              category={category}
-              onClick={() => navigate(`/categories?category=${category.id}`)}
-              className="animate-scale-in"
-            />
-          ))}
-        </div>
-
-        {/* Pagination Controls */}
-        {totalCategoryPages > 1 && (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCategoryPage(prev => Math.max(0, prev - 1))}
-              disabled={categoryPage === 0}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {categoryPage + 1} of {totalCategoryPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCategoryPage(prev => Math.min(totalCategoryPages - 1, prev + 1))}
-              disabled={categoryPage === totalCategoryPages - 1}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </section>
-
       {/* Featured Combos */}
       {featuredCombos.length > 0 && (
         <section className="px-4 space-y-4">
@@ -218,46 +167,75 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-      {/* {featuredProducts.length > 0 && (
+      {/* Featured Products - 5 Liter with Max Discounts (No Pagination) */}
+      {featuredProducts.length > 0 && (
         <section className="px-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-section">Best Deals - 5 Liter Cans</h2>
-            <Badge variant="destructive" className="animate-pulse">
-              Maximum Discounts
-            </Badge>
-          </div>
+          <h2 className="text-section">Featured Products</h2>
           
+          {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {featuredProducts.map((product) => (
               <ProductCard 
                 key={product.id} 
                 product={product}
-                  onClick={() => navigate(`/products/${product.id}`)}
                 className="animate-scale-in"
+                onClick={() => navigate(`/products/${product.id}`)}
               />
             ))}
           </div>
         </section>
-      )} */}
+      )}
 
-      {/* Popular Products */}
+      {/* All Products Section with Pagination - SORTED BY SERIALNO */}
       <section className="px-4 space-y-4">
-        <h2 className="text-section">Popular Products</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-section">Our Products</h2>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => navigate('/categories')}
+            className="text-primary"
+          >
+            View All <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
         
         {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {featuredProducts.map((product) => (
+          {sortBySerialNo(paginatedProducts).map((product) => (
             <ProductCard 
               key={product.id} 
               product={product}
               className="animate-scale-in"
-                                onClick={() => navigate(`/products/${product.id}`)}
-
+              onClick={() => navigate(`/products/${product.id}`)}
             />
           ))}
         </div>
 
-     
+        {/* Pagination Controls */}
+        {totalProductPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setProductPage(prev => Math.max(0, prev - 1))}
+              disabled={productPage === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {productPage + 1} of {totalProductPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setProductPage(prev => Math.min(totalProductPages - 1, prev + 1))}
+              disabled={productPage === totalProductPages - 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* Testimonials */}
@@ -311,4 +289,4 @@ export const Home: React.FC = () => {
       </section>
     </div>
   );
-}
+};

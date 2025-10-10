@@ -94,6 +94,7 @@ export interface Product {
   ingredients: string;
   instructions: string;
   isActive: boolean;
+  serialNo?: number;
   createdAt: Timestamp;
 }
 
@@ -150,8 +151,13 @@ export const firebaseService = {
         ...doc.data()
       } as Product));
       
-      // Sort client-side by name
-      return products.sort((a, b) => a.name.localeCompare(b.name));
+      // Sort client-side by serialNo (ascending)
+      return products.sort((a, b) => {
+        if (a.serialNo === undefined && b.serialNo === undefined) return 0;
+        if (a.serialNo === undefined) return 1;
+        if (b.serialNo === undefined) return -1;
+        return a.serialNo - b.serialNo;
+      });
     } catch (error) {
       console.error('Error fetching products by category:', error);
       throw error;
@@ -171,8 +177,13 @@ export const firebaseService = {
         ...doc.data()
       } as Product));
       
-      // Sort client-side by name
-      return products.sort((a, b) => a.name.localeCompare(b.name));
+      // Sort client-side by serialNo (ascending), products without serialNo go to the end
+      return products.sort((a, b) => {
+        if (a.serialNo === undefined && b.serialNo === undefined) return 0;
+        if (a.serialNo === undefined) return 1;
+        if (b.serialNo === undefined) return -1;
+        return a.serialNo - b.serialNo;
+      });
     } catch (error) {
       console.error('Error fetching products:', error);
       throw error;
