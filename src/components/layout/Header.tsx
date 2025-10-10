@@ -97,6 +97,7 @@ export const Header: React.FC = () => {
               
               {searchQuery && (
                 <button
+                title='Clear search'
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded transition-colors"
                 >
@@ -176,6 +177,7 @@ export const Header: React.FC = () => {
             {/* Mobile Search */}
             <div ref={searchRef} className="sm:hidden">
               <button
+              title='Search products'
                 onClick={() => setSearchOpen(!searchOpen)}
                 className="p-2 hover:bg-muted transition-colors rounded"
               >
@@ -197,6 +199,7 @@ export const Header: React.FC = () => {
                       />
                       {searchQuery && (
                         <button
+                        title='Clear search'
                           onClick={() => setSearchQuery('')}
                           className="p-1 hover:bg-muted transition-colors rounded"
                         >

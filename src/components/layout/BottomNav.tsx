@@ -1,11 +1,12 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Grid3X3, Package, Warehouse } from 'lucide-react';
+import { Home, Grid3X3, Package, Warehouse ,InfoIcon} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Categories', href: '/categories', icon: Grid3X3 },
+  {name : "About Us", href: '/about', icon: InfoIcon},
   { name: 'Combos', href: '/combos', icon: Package },
   { name: 'Bulk Orders', href: '/bulk-orders', icon: Warehouse },
 ];
@@ -16,7 +17,7 @@ export const BottomNav: React.FC = () => {
 
   return (
     <div className="nav-bottom">
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-5 h-16">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           const Icon = item.icon;

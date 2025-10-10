@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Category, Product, Combo, firebaseService } from '@/lib/firebase';
-import { CategoryCard } from '@/components/categories/CategoryCard';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ComboCard } from '@/components/combos/ComboCard';
 import { Button } from '@/components/ui/button';
@@ -50,7 +49,6 @@ export const Home: React.FC = () => {
         setAllCategories(categoriesData);
         setAllProducts(productsData);
         
-        // Filter for 5-liter cans with discounts and sort by serialNo
         const fiveLiterProducts = productsData
           .filter(p => 
             p.weight?.includes('5') && 
@@ -140,7 +138,6 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Featured Combos */}
       {featuredCombos.length > 0 && (
         <section className="px-4 space-y-4">
           <div className="flex items-center justify-between">
@@ -167,24 +164,7 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-      {/* Featured Products - 5 Liter with Max Discounts (No Pagination) */}
-      {featuredProducts.length > 0 && (
-        <section className="px-4 space-y-4">
-          <h2 className="text-section">Featured Products</h2>
-          
-          {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {featuredProducts.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                product={product}
-                className="animate-scale-in"
-                onClick={() => navigate(`/products/${product.id}`)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+    
 
       {/* All Products Section with Pagination - SORTED BY SERIALNO */}
       <section className="px-4 space-y-4">
@@ -237,6 +217,24 @@ export const Home: React.FC = () => {
           </div>
         )}
       </section>
+        {featuredProducts.length > 0 && (
+        <section className="px-4 space-y-4">
+          <h2 className="text-section">Featured Products</h2>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {featuredProducts.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                product={product}
+                className="animate-scale-in"
+                onClick={() => navigate(`/products/${product.id}`)}
+              />
+            ))
+            }
+          </div>
+        </section>
+      )
+      }
 
       {/* Testimonials */}
       <section className="px-4 space-y-4 bg-muted py-8 -mx-4">
