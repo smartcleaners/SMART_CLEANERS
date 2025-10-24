@@ -35,7 +35,6 @@ const CartPage: React.FC = () => {
     }
   };
 
-  // Calculate bulk discount savings
   const calculateBulkDiscount = (quantity: number, price: number) => {
     if (quantity >= 50) return price * quantity * 0.25;
     if (quantity >= 10) return price * quantity * 0.15;

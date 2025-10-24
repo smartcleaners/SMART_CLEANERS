@@ -48,7 +48,16 @@ export const ProductDetails: React.FC = () => {
   }, [productId]);
 
   const handleAddToCart = () => {
-    addItem(product);
+    if (!product) return;
+    
+    // Add the product multiple times based on quantity
+    for (let i = 0; i < quantity; i++) {
+      addItem(product);
+    }
+    
+    // Optional: Show success message and reset quantity
+    // You could add a toast notification here
+    setQuantity(1);
   };
 
   const calculateDiscount = () => {

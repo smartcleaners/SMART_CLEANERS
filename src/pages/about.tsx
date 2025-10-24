@@ -102,23 +102,20 @@ export const AboutUs = () => {
               <div>
                 <h3 className="text-4xl font-bold mb-2 text-gray-900">Mr Sudigollu Hari Babu</h3>
                 <p className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-                  Founder & CEO, Priyanka Enterprises
-                </p>
+Founder & CEO of smartcleaners, Priyanka Enterprises,the Cinco Group of Hotels                </p>
               </div>
 
               <div className="space-y-4 text-gray-700">
                 <p className="leading-relaxed text-lg">
-                  Mr Hari Babu is a passionate visionary who founded Priyanka Enterprises with a dream to build sustainable, quality-driven businesses. His entrepreneurial spirit has established multiple thriving ventures under the Priyanka Enterprises umbrella.
-                </p>
+A Visionary Leader in Hospitality and Beyond                </p>
                 
                 <p className="leading-relaxed text-lg">
-                  From innovative credit card businesses to prestigious hospitality brands like five-star hotels, his portfolio demonstrates versatility and business acumen. Smart Cleaners stands as a testament to his commitment to exceptional value.
-                </p>
+Sudigollu Hari Babu is a Hotel Management graduate with over a decade of professional experience in the hospitality industry. As the Managing Director of The Cinco Group of Hotels, he has successfully built a brand known for its exceptional service, comfort, and modern amenities. His leadership and commitment to customer satisfaction have helped the group earn a strong reputation in the competitive hospitality sector                </p>
 
                 <p className="leading-relaxed text-lg">
-                  Rising from a challenging background with many obstacles, he has overcome hardships through determination and perseverance. His journey from struggle to success inspires everyone around him, and his unwavering commitment to excellence drives Smart Cleaners forward.
-                </p>
-
+Driven by an entrepreneurial spirit, Hari Babu expanded his vision beyond hotels. He founded Priyanka Enterprises, offering utility and financial services, and Smart Cleaners, a trusted name in professional cleaning and maintenance. Through his ventures, he continues to set new standards of quality and reliability while inspiring young entrepreneurs to dream big and build with integrity.                </p>
+                
+               
                 <div className="pt-4 px-6 py-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-l-4 border-blue-600">
                   <p className="text-lg font-semibold text-gray-900 italic">
                     "Making things better" is not just a motto—it's my guiding principle in everything I do.
