@@ -157,10 +157,7 @@ export const CheckOut: React.FC = () => {
       setOrderPlaced(true);
       clearCart();
       
-      if (paymentMethod === 'online') {
-        const upiLink = `upi://pay?pa=9014632639@ybl&pn=SUDIGOLLU%20HARI%20BABU&mc=0000&mode=02&purpose=00&am=${total.toFixed(2)}`;
-        window.location.href = upiLink;
-      }
+      
        if (paymentMethod === 'online') {
         const upiId = 'babuhari118@ybl';
         const merchantName = 'Sudigolu%20Haribabu';
