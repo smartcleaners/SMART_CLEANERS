@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, X } from 'lucide-react';
+import { ShoppingCart, Search, X, AlarmClockOff, User2Icon } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '@/components/ui/badge';
 import {  Product, firebaseService } from '@/lib/firebase';
@@ -253,6 +253,20 @@ export const Header: React.FC = () => {
                 </div>
               )}
             </div>
+            <Link
+              to="/account"
+              className="relative p-2 hover:bg-muted transition-colors rounded"
+            >
+              <User2Icon className="h-5 w-5" />
+              {/* {itemCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
+                >
+                  {itemCount > 99 ? '99+' : itemCount}
+                </Badge>
+              )} */}
+            </Link>
 
             {/* Cart */}
             <Link

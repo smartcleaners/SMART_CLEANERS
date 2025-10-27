@@ -161,6 +161,18 @@ export const CheckOut: React.FC = () => {
         const upiLink = `upi://pay?pa=9014632639@ybl&pn=SUDIGOLLU%20HARI%20BABU&mc=0000&mode=02&purpose=00&am=${total.toFixed(2)}`;
         window.location.href = upiLink;
       }
+       if (paymentMethod === 'online') {
+        const upiId = 'babuhari118@ybl';
+        const merchantName = 'Sudigolu%20Haribabu';
+        const amount = total.toFixed(2);
+        const transactionNote = `Order ${currentOrderId}`;
+        
+        // Standard UPI deep link format
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
+        
+        // Open UPI app
+        window.location.href = upiLink;
+      }
       
     } catch (error) {
       console.error('Error placing order:', error);
