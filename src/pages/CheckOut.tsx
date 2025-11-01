@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { firebaseService } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,17 +17,22 @@ import {
   CheckCircle,
   Loader2,
   Banknote,
-  Download
+  Download,
+  Navigation,
+  Home
 } from 'lucide-react';
 
 export const CheckOut: React.FC = () => {
   const { items, total, itemCount, clearCart } = useCart();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
+  const [gettingLocation, setGettingLocation] = useState(false);
   
   const [showQrPage, setShowQrPage] = useState(false);
+  const [addressMode, setAddressMode] = useState<'saved' | 'new' | 'location'>('saved');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -34,10 +40,35 @@ export const CheckOut: React.FC = () => {
     address: '',
     pincode: '',
     city: '',
-    state: ''
+    state: '',
+    latitude: null as number | null,
+    longitude: null as number | null
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  // Load saved address from user profile
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        phone: user.phone || '',
+        address: user.address?.street || '',
+        pincode: user.address?.pincode || '',
+        city: user.address?.city || '',
+        state: user.address?.state || '',
+        latitude: null,
+        longitude: null
+      });
+      
+      // Auto-select saved address if available
+      if (user.address?.street) {
+        setAddressMode('saved');
+      } else {
+        setAddressMode('new');
+      }
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,6 +76,64 @@ export const CheckOut: React.FC = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const getCurrentLocation = () => {
+    setGettingLocation(true);
+    
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      setGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Use reverse geocoding to get address details
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+          );
+          const data = await response.json();
+          
+          if (data && data.address) {
+            setFormData(prev => ({
+              ...prev,
+              address: data.display_name || `Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+              city: data.address.city || data.address.town || data.address.village || '',
+              state: data.address.state || '',
+              pincode: data.address.postcode || '',
+              latitude,
+              longitude
+            }));
+            setAddressMode('location');
+          }
+        } catch (error) {
+          console.error('Error fetching address:', error);
+          setFormData(prev => ({
+            ...prev,
+            address: `Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            latitude,
+            longitude
+          }));
+          setAddressMode('location');
+        } finally {
+          setGettingLocation(false);
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to get your location. Please enter address manually.');
+        setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   const validateForm = () => {
@@ -55,12 +144,8 @@ export const CheckOut: React.FC = () => {
       newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
     if (!formData.address.trim()) newErrors.address = 'Address is required';
-    if (!formData.pincode.trim()) newErrors.pincode = 'Pincode is required';
-    else if (!/^\d{6}$/.test(formData.pincode)) {
-      newErrors.pincode = 'Please enter a valid 6-digit pincode';
-    }
-    if (!formData.city.trim()) newErrors.city = 'City is required';
-    if (!formData.state.trim()) newErrors.state = 'State is required';
+    if (!formData.city.trim() && addressMode !== 'location') newErrors.city = 'City is required';
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -96,7 +181,13 @@ export const CheckOut: React.FC = () => {
             city: formData.city.trim(),
             state: formData.state.trim(),
             pincode: formData.pincode.trim(),
-            fullAddress: `${formData.address.trim()}, ${formData.city.trim()}, ${formData.state.trim()} - ${formData.pincode.trim()}`
+            fullAddress: `${formData.address.trim()}, ${formData.city.trim()}, ${formData.state.trim()} - ${formData.pincode.trim()}`,
+            ...(formData.latitude && formData.longitude && {
+              coordinates: {
+                latitude: formData.latitude,
+                longitude: formData.longitude
+              }
+            })
           }
         },
         items: items.map(item => {
@@ -126,8 +217,6 @@ export const CheckOut: React.FC = () => {
       setOrderId(currentOrderId);
       setOrderPlaced(true);
       clearCart();
-      
-      // ✅ FIX: HIDE THE QR PAGE SO THE SUCCESS SCREEN CAN RENDER
       setShowQrPage(false);
 
     } catch (error) {
@@ -179,25 +268,8 @@ export const CheckOut: React.FC = () => {
         <div className="text-center space-y-6">
           <div>
             <h2 className="text-2xl font-bold">1. Complete Your Payment</h2>
-            <p className="text-muted-foreground">Scan a QR code to pay ₹{amount}.</p>
+            <p className="text-muted-foreground">Scan QR code to pay ₹{amount}.</p>
           </div>
-          
-          {/* <div className='p-4 border rounded-lg space-y-3'>
-            <h3 className='font-semibold'>Option 1: Scan Generic QR</h3>
-            <img 
-              src="/payment.jpg" 
-              alt="Scan to pay with UPI" 
-              className="mx-auto rounded-md max-w-[250px] w-full"
-            />
-            <a 
-              href="/payment.jpg" 
-              download="payment-qr.jpg"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 w-full"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download QR Code
-            </a>
-          </div> */}
           
           <div className='p-4 border rounded-lg space-y-3'>
             <h3 className='font-semibold'>Scan for Exact Amount (₹{total.toFixed(2)})</h3>
@@ -277,7 +349,7 @@ export const CheckOut: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid lg-grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="card-product p-6 space-y-4">
             <div className="flex items-center gap-2 mb-4">
@@ -303,27 +375,135 @@ export const CheckOut: React.FC = () => {
               <MapPin className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold">Delivery Address</h2>
             </div>
+
+            {/* Address Mode Selection */}
+            {user && user.address?.street && (
+              <div className="flex gap-3 mb-4">
+                <Button
+                  type="button"
+                  variant={addressMode === 'saved' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setAddressMode('saved');
+                    setFormData(prev => ({
+                      ...prev,
+                      address: user.address?.street || '',
+                      city: user.address?.city || '',
+                      state: user.address?.state || '',
+                      pincode: user.address?.pincode || '',
+                      latitude: null,
+                      longitude: null
+                    }));
+                  }}
+                  className="flex-1"
+                >
+                  <Home className="h-4 w-4 mr-2" />
+                  Saved Address
+                </Button>
+                <Button
+                  type="button"
+                  variant={addressMode === 'new' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setAddressMode('new');
+                    setFormData(prev => ({
+                      ...prev,
+                      address: '',
+                      city: '',
+                      state: '',
+                      pincode: '',
+                      latitude: null,
+                      longitude: null
+                    }));
+                  }}
+                  className="flex-1"
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  New Address
+                </Button>
+              </div>
+            )}
+
+            {/* Get Current Location Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={getCurrentLocation}
+              disabled={gettingLocation}
+              className="w-full mb-4"
+            >
+              {gettingLocation ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Getting Location...
+                </>
+              ) : (
+                <>
+                  <Navigation className="h-4 w-4 mr-2" />
+                  Use Current Location
+                </>
+              )}
+            </Button>
+
+            {addressMode === 'location' && formData.latitude && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800 mb-4">
+                <p className="font-medium">📍 Location captured</p>
+                <p className="text-xs mt-1">Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude?.toFixed(6)}</p>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Address *</label>
-                <textarea name="address" value={formData.address} onChange={handleInputChange} rows={3} className={`w-full p-3 border rounded-lg resize-none ${errors.address ? 'border-red-500' : 'border-gray-300'}`} placeholder="Enter your complete address" />
+                <textarea 
+                  name="address" 
+                  value={formData.address} 
+                  onChange={handleInputChange} 
+                  rows={3} 
+                  className={`w-full p-3 border rounded-lg resize-none ${errors.address ? 'border-red-500' : 'border-gray-300'}`} 
+                  placeholder="Enter your complete address" 
+                  disabled={addressMode === 'saved'}
+                />
                 {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
               </div>
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">City *</label>
-                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} className={`w-full p-3 border rounded-lg ${errors.city ? 'border-red-500' : 'border-gray-300'}`} placeholder="City" />
+                  <input 
+                    type="text" 
+                    name="city" 
+                    value={formData.city} 
+                    onChange={handleInputChange} 
+                    className={`w-full p-3 border rounded-lg ${errors.city ? 'border-red-500' : 'border-gray-300'}`} 
+                    placeholder="City" 
+                    disabled={addressMode === 'saved'}
+                  />
                   {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">State *</label>
-                  <input type="text" name="state" value={formData.state} onChange={handleInputChange} className={`w-full p-3 border rounded-lg ${errors.state ? 'border-red-500' : 'border-gray-300'}`} placeholder="State" />
-                  {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state}</p>}
+                  <label className="block text-sm font-medium mb-1">State</label>
+                  <input 
+                    type="text" 
+                    name="state" 
+                    value={formData.state} 
+                    onChange={handleInputChange} 
+                    className="w-full p-3 border rounded-lg border-gray-300" 
+                    placeholder="State" 
+                    disabled={addressMode === 'saved'}
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Pincode *</label>
-                  <input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} className={`w-full p-3 border rounded-lg ${errors.pincode ? 'border-red-500' : 'border-gray-300'}`} placeholder="000000" maxLength={6} />
-                  {errors.pincode && <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>}
+                  <label className="block text-sm font-medium mb-1">Pincode</label>
+                  <input 
+                    type="text" 
+                    name="pincode" 
+                    value={formData.pincode} 
+                    onChange={handleInputChange} 
+                    className="w-full p-3 border rounded-lg border-gray-300" 
+                    placeholder="000000" 
+                    maxLength={6} 
+                    disabled={addressMode === 'saved'}
+                  />
                 </div>
               </div>
             </div>

@@ -6,6 +6,9 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
@@ -33,10 +36,13 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, phone: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserData>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const auth = getAuth();
+const googleProvider = new GoogleAuthProvider();
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserData | null>(null);
@@ -128,6 +134,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+
+      // Check if user document exists
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      
+      if (!userDoc.exists()) {
+        // Create user document for new Google sign-in users
+        await setDoc(doc(db, 'users', firebaseUser.uid), {
+          name: firebaseUser.displayName || '',
+          phone: firebaseUser.phoneNumber || '',
+          email: firebaseUser.email || '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in cancelled');
+      } else if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        throw new Error('An account already exists with this email using a different sign-in method.');
+      }
+      throw new Error('Failed to sign in with Google. Please try again.');
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Invalid email address');
+      }
+      throw new Error('Failed to send reset email. Please try again.');
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -169,7 +220,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         signup,
         logout,
-        updateUserProfile
+        updateUserProfile,
+        resetPassword,
+        signInWithGoogle
       }}
     >
       {children}
