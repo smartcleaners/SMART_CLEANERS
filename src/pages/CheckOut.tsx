@@ -19,17 +19,19 @@ import {
   Banknote,
   Download,
   Navigation,
-  Home
+  Home,
+  Save
 } from 'lucide-react';
 
 export const CheckOut: React.FC = () => {
   const { items, total, itemCount, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
   
   const [showQrPage, setShowQrPage] = useState(false);
   const [addressMode, setAddressMode] = useState<'saved' | 'new' | 'location'>('saved');
@@ -46,6 +48,9 @@ export const CheckOut: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  // Check if user has saved address
+  const hasSavedAddress = user?.address?.street;
 
   // Load saved address from user profile
   useEffect(() => {
@@ -92,7 +97,6 @@ export const CheckOut: React.FC = () => {
         const { latitude, longitude } = position.coords;
         
         try {
-          // Use reverse geocoding to get address details
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
           );
@@ -148,6 +152,30 @@ export const CheckOut: React.FC = () => {
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSaveAddress = async () => {
+    if (!validateForm()) return;
+    setSavingAddress(true);
+    
+    try {
+      await updateUserProfile({
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        address: {
+          street: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          pincode: formData.pincode.trim()
+        }
+      });
+      alert('Address saved successfully! You can use this address for future orders.');
+    } catch (error) {
+      console.error('Error saving address:', error);
+      alert('Failed to save address. Please try again.');
+    } finally {
+      setSavingAddress(false);
+    }
   };
 
   const calculateBulkDiscount = (quantity: number, price: number) => {
@@ -507,6 +535,29 @@ export const CheckOut: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Save Address Button - Only show if no saved address exists and form is filled */}
+            {!hasSavedAddress && addressMode === 'new' && formData.address && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveAddress}
+                disabled={savingAddress}
+                className="w-full border-dashed border-2 border-accent text-accent hover:bg-accent/10"
+              >
+                {savingAddress ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving Address...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save This Address for Future Orders
+                  </>
+                )}
+              </Button>
+            )}
           </div>
 
           <div className="card-product p-6 space-y-4">
