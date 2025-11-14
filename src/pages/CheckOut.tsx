@@ -11,7 +11,6 @@ import {
   CheckCircle, Loader2, Banknote, Download, Navigation, Home, Save, ExternalLink
 } from 'lucide-react';
 
-// API Keys Configuration
 const MAPS_API_KEY = 'AIzaSyCpXI-nSkwRiKs7AtTjA1DLa-0r4Ri8ipU';
 const GEOCODING_API_KEY = 'AIzaSyBdFiwMiYNphva_FumsGzox7Etryg2SNDc';
 const PLACES_API_KEY = 'AIzaSyA1qLmOb0k_j1JLu0h7VLCRlwZ-eHcQNq8';
@@ -518,8 +517,7 @@ export const CheckOut: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div ref={mapRef} className="w-full h-64 rounded-lg border-2 border-gray-200" style={{ minHeight: '256px' }} />
-              </div>
+                <div ref={mapRef} className="w-full h-64 md:h-80 lg:h-96 rounded-lg border-2 border-gray-200" style={{ minHeight: '320px' }} />              </div>
             )}
 
             <div className="space-y-4">
