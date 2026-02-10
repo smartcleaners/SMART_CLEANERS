@@ -37,7 +37,7 @@ const CartPage: React.FC = () => {
 
   const calculateBulkDiscount = (quantity: number, price: number) => {
     if (quantity >= 50) return price * quantity * 0.25;
-    if (quantity >= 10) return price * quantity * 0.15;
+    if (quantity >= 25) return price * quantity * 0.15;
     return 0;
   };
 
@@ -240,7 +240,7 @@ const CartPage: React.FC = () => {
                       {/* Next bulk tier hint */}
                       {item.quantity >= 5 && item.quantity < 10 && (
                         <div className="text-xs text-muted-foreground">
-                          Add {10 - item.quantity} more for 15% off
+                          Add {25 - item.quantity} more for 15% off
                         </div>
                       )}
                       {item.quantity >= 10 && item.quantity < 50 && (
@@ -316,7 +316,7 @@ const CartPage: React.FC = () => {
             <h3 className="font-medium text-sm">💡 Bulk Discount Tiers</h3>
             <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex justify-between">
-                <span>10-49 units</span>
+                <span>25-49 units</span>
                 <span className="text-accent font-medium">15% off</span>
               </div>
               <div className="flex justify-between">

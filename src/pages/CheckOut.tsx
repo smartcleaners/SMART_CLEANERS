@@ -8,7 +8,8 @@ import QRCode from 'react-qr-code';
 import { Link } from 'react-router-dom';
 import { 
   ShoppingCart, User, MapPin, Phone, CreditCard, Package, ArrowLeft,
-  CheckCircle, Loader2, Banknote, Download, Navigation, Home, Save, ExternalLink
+  CheckCircle, Loader2, Banknote, Download, Navigation, Home, Save, ExternalLink,
+  AlertCircle
 } from 'lucide-react';
 
 const MAPS_API_KEY = 'AIzaSyCpXI-nSkwRiKs7AtTjA1DLa-0r4Ri8ipU';
@@ -30,6 +31,7 @@ export const CheckOut: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [predictions, setPredictions] = useState<any[]>([]);
   const [showPredictions, setShowPredictions] = useState(false);
+  const [stockError, setStockError] = useState<string>('');
   
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<google.maps.Map | null>(null);
@@ -265,7 +267,7 @@ export const CheckOut: React.FC = () => {
 
   const calculateBulkDiscount = (quantity: number, price: number) => {
     if (quantity >= 50) return price * quantity * 0.25;
-    if (quantity >= 10) return price * quantity * 0.15;
+    if (quantity >= 25) return price * quantity * 0.15;
     return 0;
   };
 
@@ -276,19 +278,26 @@ export const CheckOut: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     if (!validateForm()) return;
+    
     setLoading(true);
+    setStockError(''); // Clear any previous stock errors
+    
     try {
       const currentOrderId = `ORD_${Date.now()}`;
       const orderData = {
-        orderId: currentOrderId, status: 'pending',
+        orderId: currentOrderId, 
+        status: 'pending' as const,
         paymentMethod: paymentMethod === 'cash' ? 'cash_on_delivery' : 'online_payment',
         paymentStatus: paymentMethod === 'cash' ? 'pending' : 'awaiting_payment',
         createdAt: new Date(),
         customer: {
-          name: formData.name.trim(), phone: formData.phone.trim(),
+          name: formData.name.trim(), 
+          phone: formData.phone.trim(),
           address: {
-            street: formData.address.trim(), city: formData.city.trim(),
-            state: formData.state.trim(), pincode: formData.pincode.trim(),
+            street: formData.address.trim(), 
+            city: formData.city.trim(),
+            state: formData.state.trim(), 
+            pincode: formData.pincode.trim(),
             fullAddress: `${formData.address.trim()}, ${formData.city.trim()}, ${formData.state.trim()} - ${formData.pincode.trim()}`,
             ...(formData.latitude && formData.longitude && {
               coordinates: { latitude: formData.latitude, longitude: formData.longitude }
@@ -302,25 +311,43 @@ export const CheckOut: React.FC = () => {
           const bulkDiscountPerItem = bulkDiscount / item.quantity;
           return {
             productId: item.product.id,
-            productDetails: { name: item.product.name, sku: item.product.sku, images: item.product.images || [] },
-            quantity: item.quantity, unitPrice: itemPrice,
+            productDetails: { 
+              name: item.product.name, 
+              sku: item.product.sku, 
+              images: item.product.images || [] 
+            },
+            quantity: item.quantity, 
+            unitPrice: itemPrice,
             finalUnitPrice: itemPrice - bulkDiscountPerItem,
             lineTotal: (itemPrice - bulkDiscountPerItem) * item.quantity,
           };
         }),
         pricing: {
-          subtotal: total + totalBulkSavings, bulkDiscountTotal: totalBulkSavings,
-          shippingCost: 0, finalTotal: total, itemCount: itemCount
+          subtotal: total + totalBulkSavings, 
+          bulkDiscountTotal: totalBulkSavings,
+          shippingCost: 0, 
+          finalTotal: total, 
+          itemCount: itemCount
         },
       };
+      
+      // This will now validate stock and reduce it automatically
       await firebaseService.createOrder(orderData);
+      
       setOrderId(currentOrderId);
       setOrderPlaced(true);
       clearCart();
       setShowQrPage(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error placing order:', error);
-      alert('Failed to place order. Please try again.');
+      
+      // Check if it's a stock error
+      if (error.message && error.message.includes('Insufficient stock')) {
+        setStockError(error.message);
+        alert(`Unable to place order:\n\n${error.message}\n\nPlease update your cart and try again.`);
+      } else {
+        alert('Failed to place order. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -328,6 +355,7 @@ export const CheckOut: React.FC = () => {
 
   const handleSubmitClick = () => {
     if (!validateForm()) return;
+    setStockError(''); // Clear stock errors when submitting
     if (paymentMethod === 'online') {
       setShowQrPage(true);
     } else {
@@ -414,6 +442,19 @@ export const CheckOut: React.FC = () => {
           <p className="text-muted-foreground">{itemCount} {itemCount === 1 ? 'item' : 'items'} • Total: ₹{total.toFixed(2)}</p>
         </div>
       </div>
+
+      {/* Stock Error Alert */}
+      {stockError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900 mb-1">Stock Unavailable</h3>
+              <p className="text-sm text-red-700 whitespace-pre-line">{stockError}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection,addDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, Timestamp, doc, updateDoc, increment, runTransaction, getDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 
@@ -112,6 +112,17 @@ export interface Combo {
   validFrom: Timestamp;
   validUntil: Timestamp;
   createdAt: Timestamp;
+}
+
+// Stock validation result
+export interface StockValidationResult {
+  isValid: boolean;
+  insufficientItems: Array<{
+    productId: string;
+    productName: string;
+    requested: number;
+    available: number;
+  }>;
 }
 
 // Firebase service functions
@@ -233,17 +244,150 @@ export const firebaseService = {
     }
   },
 
+  // NEW: Check stock availability for cart items
+  async validateStock(cartItems: Array<{ productId: string; quantity: number; productName: string }>): Promise<StockValidationResult> {
+    try {
+      const insufficientItems: Array<{
+        productId: string;
+        productName: string;
+        requested: number;
+        available: number;
+      }> = [];
+
+      // Check each product's stock
+      for (const item of cartItems) {
+        const productRef = doc(db, 'products', item.productId);
+        const productSnap = await getDoc(productRef);
+        
+        if (!productSnap.exists()) {
+          insufficientItems.push({
+            productId: item.productId,
+            productName: item.productName,
+            requested: item.quantity,
+            available: 0,
+          });
+          continue;
+        }
+
+        const productData = productSnap.data() as Product;
+        const availableStock = productData.stock || 0;
+
+        if (availableStock < item.quantity) {
+          insufficientItems.push({
+            productId: item.productId,
+            productName: item.productName,
+            requested: item.quantity,
+            available: availableStock,
+          });
+        }
+      }
+
+      return {
+        isValid: insufficientItems.length === 0,
+        insufficientItems,
+      };
+    } catch (error) {
+      console.error('Error validating stock:', error);
+      throw error;
+    }
+  },
+
+  // NEW: Reduce stock for ordered items (using transaction for atomicity)
+  async reduceStock(cartItems: Array<{ productId: string; quantity: number }>): Promise<void> {
+    try {
+      await runTransaction(db, async (transaction) => {
+        // Read all product stocks first
+        const productRefs = cartItems.map(item => doc(db, 'products', item.productId));
+        const productSnaps = await Promise.all(
+          productRefs.map(ref => transaction.get(ref))
+        );
+
+        // Verify stock availability in the transaction
+        const stockIssues: string[] = [];
+        productSnaps.forEach((snap, index) => {
+          if (!snap.exists()) {
+            stockIssues.push(`Product ${cartItems[index].productId} not found`);
+            return;
+          }
+          
+          const currentStock = snap.data().stock || 0;
+          if (currentStock < cartItems[index].quantity) {
+            stockIssues.push(
+              `Insufficient stock for ${snap.data().name}: ${currentStock} available, ${cartItems[index].quantity} requested`
+            );
+          }
+        });
+
+        if (stockIssues.length > 0) {
+          throw new Error(`Stock validation failed: ${stockIssues.join(', ')}`);
+        }
+
+        // Update all product stocks
+        productRefs.forEach((ref, index) => {
+          transaction.update(ref, {
+            stock: increment(-cartItems[index].quantity),
+            updatedAt: Timestamp.now(),
+          });
+        });
+      });
+
+      console.log('Stock reduced successfully for all items');
+    } catch (error) {
+      console.error('Error reducing stock:', error);
+      throw error;
+    }
+  },
+
+  // UPDATED: Create order with stock reduction
   async createOrder(orderData: Omit<Order, 'id'>): Promise<string> {
     try {
+      // First validate and reduce stock
+      const cartItems = orderData.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        productName: item.productDetails.name,
+      }));
+
+      // Validate stock availability
+      const stockValidation = await this.validateStock(cartItems);
+      if (!stockValidation.isValid) {
+        const errorMessage = stockValidation.insufficientItems
+          .map(item => `${item.productName}: ${item.available} available, ${item.requested} requested`)
+          .join('\n');
+        throw new Error(`Insufficient stock:\n${errorMessage}`);
+      }
+
+      // Reduce stock atomically
+      await this.reduceStock(cartItems);
+
+      // Create the order
       const docRef = await addDoc(collection(db, 'orders'), {
         ...orderData,
-        createdAt: Timestamp.now(), // Convert to Firestore Timestamp
+        createdAt: Timestamp.now(),
       });
+      
       console.log('Order created with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
       console.error('Error creating order:', error);
       throw error;
     }
-  }
+  },
+
+  // NEW: Get current stock for a product
+  async getProductStock(productId: string): Promise<number> {
+    try {
+      const productRef = doc(db, 'products', productId);
+      const productSnap = await getDoc(productRef);
+      
+      if (!productSnap.exists()) {
+        throw new Error('Product not found');
+      }
+      
+      return productSnap.data().stock || 0;
+    } catch (error) {
+      console.error('Error fetching product stock:', error);
+      throw error;
+    }
+  },
 };

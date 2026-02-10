@@ -1,15 +1,13 @@
 import React from 'react';
 import { Product } from '@/lib/firebase';
 import { Badge } from '@/components/ui/badge';
-import { Package } from 'lucide-react';
+import { Package, AlertCircle } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
   className?: string;
   onClick?: () => void;
 }
-
-// yoo
 
 export const ProductCard: React.FC<ProductCardProps> = ({ 
   product, 
@@ -21,9 +19,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
     : 0;
 
+  // Stock status logic
+  const isOutOfStock = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock <= 10;
+  const stockCount = product.stock;
+
   return (
     <div 
-      className={`card-product p-4 space-y-3 cursor-pointer hover:shadow-lg transition-shadow ${className}`}
+      className={`card-product p-4 space-y-3 cursor-pointer hover:shadow-lg transition-shadow relative ${
+        isOutOfStock ? 'opacity-75' : ''
+      } ${className}`}
       onClick={onClick}
     >
       {/* Product Image */}
@@ -44,10 +49,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
         
+        {/* Out of Stock Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <Badge variant="destructive" className="text-sm font-semibold px-4 py-2">
+              Out of Stock
+            </Badge>
+          </div>
+        )}
+
         {/* Discount Badge */}
-        {hasDiscount && (
+        {hasDiscount && !isOutOfStock && (
           <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
             -{discountPercentage}%
+          </Badge>
+        )}
+
+        {/* Low Stock Badge */}
+        {isLowStock && !isOutOfStock && (
+          <Badge className="absolute top-2 left-2 bg-orange-500 text-white flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" />
+            Only {stockCount} left
           </Badge>
         )}
       </div>
@@ -61,15 +83,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {product.description}
         </p>
 
-        {/* Price */}
-        <div className="flex items-center gap-2">
-          <span className="text-price font-bold">
-            ₹{product.salePrice || product.price}
-          </span>
-          {hasDiscount && (
-            <span className="text-price-original">
-              ₹{product.price}
+        {/* Price and Stock Status */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-price font-bold">
+              ₹{product.salePrice || product.price}
             </span>
+            {hasDiscount && (
+              <span className="text-price-original">
+                ₹{product.price}
+              </span>
+            )}
+          </div>
+
+          {/* Stock Status Text */}
+          {isOutOfStock ? (
+            <p className="text-xs text-red-600 font-medium">Currently Unavailable</p>
+          ) : isLowStock ? (
+            <p className="text-xs text-orange-600 font-medium">Hurry! Only {stockCount} left in stock</p>
+          ) : (
+            <p className="text-xs text-green-600 font-medium">In Stock ({stockCount} available)</p>
           )}
         </div>
       </div>

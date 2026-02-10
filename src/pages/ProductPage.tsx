@@ -16,7 +16,9 @@ import {
   Plus,
   Star,
   Shield,
-  Truck
+  Truck,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 
@@ -27,6 +29,7 @@ export const ProductDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -55,8 +58,11 @@ export const ProductDetails: React.FC = () => {
       addItem(product);
     }
     
-    // Optional: Show success message and reset quantity
-    // You could add a toast notification here
+    // Show success feedback
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+    
+    // Reset quantity
     setQuantity(1);
   };
 
@@ -86,6 +92,8 @@ export const ProductDetails: React.FC = () => {
   }
 
   const discount = calculateDiscount();
+  const isOutOfStock = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock <= 10;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -99,17 +107,54 @@ export const ProductDetails: React.FC = () => {
         Back
       </Button>
 
+      {/* Out of Stock Alert */}
+      {isOutOfStock && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900">Currently Out of Stock</h3>
+              <p className="text-sm text-red-700 mt-1">
+                This product is temporarily unavailable. Please check back later or contact us for restock information.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Low Stock Alert */}
+      {isLowStock && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-orange-900">Limited Stock Available</h3>
+              <p className="text-sm text-orange-700 mt-1">
+                Only {product.stock} units left in stock. Order now to secure yours!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Product Section */}
       <div className="grid md:grid-cols-2 gap-8">
         {/* Image Gallery */}
         <div className="space-y-4">
           {/* Main Image */}
-          <div className="card-elevated overflow-hidden aspect-square">
+          <div className="card-elevated overflow-hidden aspect-square relative">
             <img 
               src={product.images[selectedImage] || '/placeholder-product.png'} 
               alt={product.name}
               className="w-full h-full object-cover"
             />
+            {isOutOfStock && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <Badge variant="destructive" className="text-lg font-semibold px-6 py-3">
+                  Out of Stock
+                </Badge>
+              </div>
+            )}
           </div>
 
           {/* Thumbnail Navigation */}
@@ -160,20 +205,30 @@ export const ProductDetails: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-4">
               <h1 className="text-3xl font-bold">{product.name}</h1>
-              {product.stock > 0 ? (
-                <Badge className="bg-green-500">In Stock</Badge>
+              {isOutOfStock ? (
+                <Badge variant="destructive" className="text-sm">Out of Stock</Badge>
+              ) : isLowStock ? (
+                <Badge className="bg-orange-500 text-white text-sm">
+                  Only {product.stock} Left
+                </Badge>
               ) : (
-                <Badge variant="destructive">Out of Stock</Badge>
+                <Badge className="bg-green-500 text-sm">In Stock</Badge>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="text-xs">
                 SKU: {product.sku}
               </Badge>
               {discount > 0 && (
                 <Badge variant="destructive" className="animate-pulse">
                   {discount}% OFF
+                </Badge>
+              )}
+              {!isOutOfStock && (
+                <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  {product.stock} Available
                 </Badge>
               )}
             </div>
@@ -221,43 +276,75 @@ export const ProductDetails: React.FC = () => {
           </div>
 
           {/* Quantity Selector */}
-          <div className="space-y-3">
-            <label className="font-semibold">Quantity</label>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                disabled={quantity <= 1}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="text-xl font-semibold w-16 text-center">
-                {quantity}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setQuantity(prev => Math.min(product.stock, prev + 1))}
-                disabled={quantity >= product.stock}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                ({product.stock} available)
-              </span>
+          {!isOutOfStock && (
+            <div className="space-y-3">
+              <label className="font-semibold">Quantity</label>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                  disabled={quantity <= 1}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-xl font-semibold w-16 text-center">
+                  {quantity}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setQuantity(prev => Math.min(product.stock, prev + 1))}
+                  disabled={quantity >= product.stock}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  ({product.stock} available)
+                </span>
+              </div>
+              {isLowStock && quantity >= product.stock && (
+                <p className="text-xs text-orange-600 font-medium">
+                  You've selected all available stock
+                </p>
+              )}
             </div>
-          </div>
+          )}
 
           {/* Add to Cart Button */}
-          <Button 
-            className="btn-cta w-full text-lg py-6"
-            onClick={handleAddToCart}
-            disabled={product.stock === 0}
-          >
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            Add to Cart - ₹{((product.salePrice || product.price) * quantity).toFixed(2)}
-          </Button>
+          {isOutOfStock ? (
+            <div className="space-y-2">
+              <Button 
+                className="w-full text-lg py-6 bg-gray-400 cursor-not-allowed"
+                disabled
+              >
+                <AlertCircle className="h-5 w-5 mr-2" />
+                Out of Stock
+              </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                Contact us to know when this product will be back in stock
+              </p>
+            </div>
+          ) : (
+            <Button 
+              className={`btn-cta w-full text-lg py-6 transition-all ${
+                addedToCart ? 'bg-green-600 hover:bg-green-700' : ''
+              }`}
+              onClick={handleAddToCart}
+            >
+              {addedToCart ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                  Added to Cart!
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  Add to Cart - ₹{((product.salePrice || product.price) * quantity).toFixed(2)}
+                </>
+              )}
+            </Button>
+          )}
 
           {/* Bulk Order CTA */}
           <div className="card-elevated p-4 bg-muted">
@@ -299,6 +386,18 @@ export const ProductDetails: React.FC = () => {
               <span className="text-muted-foreground">SKU</span>
               <span className="font-medium">{product.sku}</span>
             </div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-muted-foreground">Stock Status</span>
+              <span className={`font-medium ${
+                isOutOfStock ? 'text-red-600' : 
+                isLowStock ? 'text-orange-600' : 
+                'text-green-600'
+              }`}>
+                {isOutOfStock ? 'Out of Stock' : 
+                 isLowStock ? `Only ${product.stock} left` : 
+                 `${product.stock} in stock`}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -310,22 +409,24 @@ export const ProductDetails: React.FC = () => {
           </div>
           
           <p className="text-sm text-muted-foreground leading-relaxed">
-            {product.ingredients}
+            {product.ingredients || 'No ingredient information available'}
           </p>
         </div>
       </div>
 
       {/* Instructions */}
-      <div className="card-elevated p-6 space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-lg">Usage Instructions</h3>
+      {product.instructions && (
+        <div className="card-elevated p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-lg">Usage Instructions</h3>
+          </div>
+          
+          <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+            {product.instructions}
+          </div>
         </div>
-        
-        <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-          {product.instructions}
-        </div>
-      </div>
+      )}
 
       {/* Safety Notice */}
       <div className="gradient-hero text-white p-6 rounded-lg">
