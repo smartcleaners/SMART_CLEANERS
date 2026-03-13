@@ -102,7 +102,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           ) : isLowStock ? (
             <p className="text-xs text-orange-600 font-medium">Hurry! Only {stockCount} left in stock</p>
           ) : (
-            <p className="text-xs text-green-600 font-medium">In Stock ({stockCount} available)</p>
+            <p className="text-xs text-green-600 font-medium"></p>
           )}
         </div>
       </div>

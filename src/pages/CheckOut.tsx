@@ -287,6 +287,7 @@ export const CheckOut: React.FC = () => {
       const orderData = {
         orderId: currentOrderId, 
         status: 'pending' as const,
+        paymentrecord:"unpaid" as const,
         paymentMethod: paymentMethod === 'cash' ? 'cash_on_delivery' : 'online_payment',
         paymentStatus: paymentMethod === 'cash' ? 'pending' : 'awaiting_payment',
         createdAt: new Date(),

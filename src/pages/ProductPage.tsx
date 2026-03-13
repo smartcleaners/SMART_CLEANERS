@@ -395,7 +395,7 @@ export const ProductDetails: React.FC = () => {
               }`}>
                 {isOutOfStock ? 'Out of Stock' : 
                  isLowStock ? `Only ${product.stock} left` : 
-                 `${product.stock} in stock`}
+                 ``}
               </span>
             </div>
           </div>
