@@ -77,8 +77,8 @@ export const Header: React.FC = () => {
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link to="/" className="hover:opacity-80 transition-opacity">
-              <h1 className="text-xl font-bold text-primary">Smart Cleaners</h1>
+            <Link to="/" className="hover:opacity-80 transition-opacity flex items-center gap-2">
+              <img src="/logo.png" alt="Smart Cleaners" className="h-20 w-20 object-contain" />
             </Link>
           </div>
 
