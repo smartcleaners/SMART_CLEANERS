@@ -35,7 +35,7 @@ export const Combos: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 px-4 py-6">
+    <div className="max-w-7xl mx-auto space-y-8 px-4 py-8">
       {/* Header */}
       <div className="text-center space-y-4">
         <Package className="h-8 w-8 text-primary mx-auto" />
@@ -72,7 +72,7 @@ export const Combos: React.FC = () => {
             <Badge className="bg-cta text-cta-foreground">Hot</Badge>
           </div>
           
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredCombos.map((combo) => (
               <ComboCard 
                 key={combo.id} 
@@ -92,7 +92,7 @@ export const Combos: React.FC = () => {
         </div>
         
         {regularCombos.length > 0 ? (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {regularCombos.map((combo) => (
               <ComboCard 
                 key={combo.id} 
@@ -123,7 +123,7 @@ export const Combos: React.FC = () => {
       )}
 
       {/* Info Section */}
-      <section className="bg-gradient-to-r from-primary/5 to-accent/5 p-6 -mx-4 space-y-4">
+      <section className="bg-gradient-to-r from-primary/5 to-accent/5 p-6 -mx-4 sm:mx-0 sm:rounded-2xl space-y-4">
         <h3 className="font-semibold text-primary">Why Choose Our Combos?</h3>
         <div className="space-y-3 text-sm">
           <div className="flex items-start gap-3">

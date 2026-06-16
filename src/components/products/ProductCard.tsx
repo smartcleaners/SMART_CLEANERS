@@ -31,7 +31,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       onClick={onClick}
     >
       {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden bg-muted rounded-lg">
+      <div className="relative aspect-square overflow-hidden bg-muted rounded-none">
         {product.images && product.images.length > 0 ? (
           <img
             src={product.images[0]}
@@ -64,13 +64,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </Badge>
         )}
 
-        {/* Low Stock Badge */}
-        {isLowStock && !isOutOfStock && (
-          <Badge className="absolute top-2 left-2 bg-orange-500 text-white flex items-center gap-1">
-            <AlertCircle className="h-3 w-3" />
-            Only {stockCount} left
-          </Badge>
-        )}
+
       </div>
 
       {/* Product Info */}

@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Product, firebaseService } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ShoppingCart, 
-  ArrowLeft, 
-  Package, 
-  Ruler, 
+import {
+  ShoppingCart,
+  ArrowLeft,
+  Package,
+  Ruler,
   ListChecks,
   FileText,
   ChevronLeft,
@@ -35,7 +35,7 @@ export const ProductDetails: React.FC = () => {
   useEffect(() => {
     const loadProduct = async () => {
       if (!productId) return;
-      
+
       try {
         const products = await firebaseService.getProducts();
         const foundProduct = products.find(p => p.id === productId);
@@ -52,16 +52,16 @@ export const ProductDetails: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    
+
     // Add the product multiple times based on quantity
     for (let i = 0; i < quantity; i++) {
       addItem(product);
     }
-    
+
     // Show success feedback
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
-    
+
     // Reset quantity
     setQuantity(1);
   };
@@ -98,8 +98,8 @@ export const ProductDetails: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       {/* Back Button */}
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         onClick={() => navigate(-1)}
         className="mb-4"
       >
@@ -122,64 +122,37 @@ export const ProductDetails: React.FC = () => {
         </div>
       )}
 
-      {/* Low Stock Alert */}
-      {isLowStock && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-orange-900">Limited Stock Available</h3>
-              <p className="text-sm text-orange-700 mt-1">
-                Only {product.stock} units left in stock. Order now to secure yours!
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Product Section */}
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-2 gap-8 items-start">
         {/* Image Gallery */}
-        <div className="space-y-4">
-          {/* Main Image */}
-          <div className="card-elevated overflow-hidden aspect-square relative">
-            <img 
-              src={product.images[selectedImage] || '/placeholder-product.png'} 
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-            {isOutOfStock && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <Badge variant="destructive" className="text-lg font-semibold px-6 py-3">
-                  Out of Stock
-                </Badge>
-              </div>
-            )}
-          </div>
-
+        <div className="flex flex-col-reverse md:flex-row gap-4 sticky top-24 z-10">
           {/* Thumbnail Navigation */}
           {product.images.length > 1 && (
-            <div className="flex items-center gap-2">
+            <div className="flex md:flex-col items-center md:items-start justify-start gap-2 w-full md:w-20 flex-shrink-0 min-w-0">
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
+                className="md:hidden flex-shrink-0"
                 onClick={() => setSelectedImage(prev => Math.max(0, prev - 1))}
                 disabled={selectedImage === 0}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              
-              <div className="flex gap-2 flex-1 overflow-x-auto">
+
+              <div
+                className="flex md:flex-col gap-3 flex-1 md:flex-none overflow-x-auto md:overflow-y-auto md:overflow-x-hidden scrollbar-hide py-1 min-w-0"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
                 {product.images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(idx)}
-                    className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden transition-all ${
-                      selectedImage === idx ? 'border-primary' : 'border-border'
-                    }`}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${selectedImage === idx ? 'border-primary shadow-sm scale-105' : 'border-border hover:border-primary/50'
+                      }`}
                   >
-                    <img 
-                      src={img} 
+                    <img
+                      src={img}
                       alt={`${product.name} ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -189,7 +162,8 @@ export const ProductDetails: React.FC = () => {
 
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
+                className="md:hidden flex-shrink-0"
                 onClick={() => setSelectedImage(prev => Math.min(product.images.length - 1, prev + 1))}
                 disabled={selectedImage === product.images.length - 1}
               >
@@ -197,6 +171,22 @@ export const ProductDetails: React.FC = () => {
               </Button>
             </div>
           )}
+
+          {/* Main Image */}
+          <div className="card-elevated overflow-hidden aspect-square relative w-full md:flex-1 min-h-[300px] bg-white">
+            <img
+              src={product.images[selectedImage] || '/placeholder-product.png'}
+              alt={product.name}
+              className="w-full h-full object-contain p-4 transition-transform duration-300"
+            />
+            {isOutOfStock && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <Badge variant="destructive" className="text-lg font-semibold px-6 py-3">
+                  Out of Stock
+                </Badge>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Product Info */}
@@ -205,32 +195,17 @@ export const ProductDetails: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-4">
               <h1 className="text-3xl font-bold">{product.name}</h1>
-              {isOutOfStock ? (
-                <Badge variant="destructive" className="text-sm">Out of Stock</Badge>
-              ) : isLowStock ? (
-                <Badge className="bg-orange-500 text-white text-sm">
-                  Only {product.stock} Left
-                </Badge>
-              ) : (
-                <Badge className="bg-green-500 text-sm">In Stock</Badge>
-              )}
+
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="text-xs">
-                SKU: {product.sku}
-              </Badge>
+
               {discount > 0 && (
                 <Badge variant="destructive" className="animate-pulse">
                   {discount}% OFF
                 </Badge>
               )}
-              {!isOutOfStock && (
-                <Badge variant="outline" className="text-xs text-green-600 border-green-600">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  {product.stock} Available
-                </Badge>
-              )}
+
             </div>
           </div>
 
@@ -299,9 +274,7 @@ export const ProductDetails: React.FC = () => {
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-muted-foreground">
-                  ({product.stock} available)
-                </span>
+
               </div>
               {isLowStock && quantity >= product.stock && (
                 <p className="text-xs text-orange-600 font-medium">
@@ -314,7 +287,7 @@ export const ProductDetails: React.FC = () => {
           {/* Add to Cart Button */}
           {isOutOfStock ? (
             <div className="space-y-2">
-              <Button 
+              <Button
                 className="w-full text-lg py-6 bg-gray-400 cursor-not-allowed"
                 disabled
               >
@@ -326,10 +299,9 @@ export const ProductDetails: React.FC = () => {
               </p>
             </div>
           ) : (
-            <Button 
-              className={`btn-cta w-full text-lg py-6 transition-all ${
-                addedToCart ? 'bg-green-600 hover:bg-green-700' : ''
-              }`}
+            <Button
+              className={`btn-cta w-full text-lg py-6 transition-all ${addedToCart ? 'bg-green-600 hover:bg-green-700' : ''
+                }`}
               onClick={handleAddToCart}
             >
               {addedToCart ? (
@@ -352,8 +324,8 @@ export const ProductDetails: React.FC = () => {
             <p className="text-xs text-muted-foreground mb-3">
               Get special pricing for orders of 50+ units
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => navigate('/bulk-orders')}
               className="w-full"
@@ -372,7 +344,7 @@ export const ProductDetails: React.FC = () => {
             <Package className="h-5 w-5 text-primary" />
             <h3 className="font-semibold text-lg">Specifications</h3>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex justify-between py-2 border-b">
               <span className="text-muted-foreground">Weight</span>
@@ -382,22 +354,8 @@ export const ProductDetails: React.FC = () => {
               <span className="text-muted-foreground">Dimensions</span>
               <span className="font-medium">{product.dimensions}</span>
             </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">SKU</span>
-              <span className="font-medium">{product.sku}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-muted-foreground">Stock Status</span>
-              <span className={`font-medium ${
-                isOutOfStock ? 'text-red-600' : 
-                isLowStock ? 'text-orange-600' : 
-                'text-green-600'
-              }`}>
-                {isOutOfStock ? 'Out of Stock' : 
-                 isLowStock ? `Only ${product.stock} left` : 
-                 ``}
-              </span>
-            </div>
+
+
           </div>
         </div>
 
@@ -407,7 +365,7 @@ export const ProductDetails: React.FC = () => {
             <ListChecks className="h-5 w-5 text-primary" />
             <h3 className="font-semibold text-lg">Ingredients</h3>
           </div>
-          
+
           <p className="text-sm text-muted-foreground leading-relaxed">
             {product.ingredients || 'No ingredient information available'}
           </p>
@@ -421,7 +379,7 @@ export const ProductDetails: React.FC = () => {
             <FileText className="h-5 w-5 text-primary" />
             <h3 className="font-semibold text-lg">Usage Instructions</h3>
           </div>
-          
+
           <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
             {product.instructions}
           </div>
@@ -432,7 +390,7 @@ export const ProductDetails: React.FC = () => {
       <div className="gradient-hero text-white p-6 rounded-lg">
         <h3 className="font-semibold mb-2">Safety Information</h3>
         <p className="text-sm opacity-90">
-          Professional grade cleaning chemical. Keep out of reach of children. 
+          Professional grade cleaning chemical. Keep out of reach of children.
           Use protective equipment when handling. Follow all safety instructions on the label.
         </p>
       </div>
