@@ -9,13 +9,13 @@ interface ProductCardProps {
   onClick?: () => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ 
-  product, 
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
   className = '',
-  onClick 
+  onClick
 }) => {
   const hasDiscount = product.salePrice && product.salePrice < product.price;
-  const discountPercentage = hasDiscount 
+  const discountPercentage = hasDiscount
     ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
     : 0;
 
@@ -25,17 +25,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const stockCount = product.stock;
 
   return (
-    <div 
-      className={`card-product p-4 space-y-3 cursor-pointer hover:shadow-lg transition-shadow relative ${
-        isOutOfStock ? 'opacity-75' : ''
-      } ${className}`}
+    <div
+      className={`card-product p-4 space-y-3 cursor-pointer hover:shadow-lg transition-shadow relative ${isOutOfStock ? 'opacity-75' : ''
+        } ${className}`}
       onClick={onClick}
     >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-muted rounded-lg">
         {product.images && product.images.length > 0 ? (
-          <img 
-            src={product.images[0]} 
+          <img
+            src={product.images[0]}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
             onError={(e) => {
@@ -48,7 +47,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <Package className="h-12 w-12 text-muted-foreground" />
           </div>
         )}
-        
+
         {/* Out of Stock Overlay */}
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -77,7 +76,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Info */}
       <div className="space-y-2">
         <h3 className="text-card-title line-clamp-2 font-semibold">{product.name}</h3>
-        
+
         {/* Description */}
         <p className="text-sm text-muted-foreground line-clamp-2">
           {product.description}
@@ -96,14 +95,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
           </div>
 
-          {/* Stock Status Text */}
-          {isOutOfStock ? (
-            <p className="text-xs text-red-600 font-medium">Currently Unavailable</p>
-          ) : isLowStock ? (
-            <p className="text-xs text-orange-600 font-medium">Hurry! Only {stockCount} left in stock</p>
-          ) : (
-            <p className="text-xs text-green-600 font-medium"></p>
-          )}
+
         </div>
       </div>
     </div>

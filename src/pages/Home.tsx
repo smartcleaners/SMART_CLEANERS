@@ -17,9 +17,19 @@ import {
 } from 'lucide-react';
 
 const BANNER_IMAGES = [
-  'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-1600,fo-auto/6a16dd7200988fc1e9cb83dc/template/1779973646117_DR0JRTDHPL_2026-05-28_1.png',
-  'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-1600,fo-auto/6a16dd7200988fc1e9cb83dc/template/1779973636658_JDNJNX8ZF1_2026-05-28_1.png',
-  'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-1600,fo-auto/6a16dd7200988fc1e9cb83dc/template/1779973636658_716JXYEM9L_2026-05-28_2.png',
+  '/image copy 0.jpeg',
+  '/image copy 1.png',
+  '/image copy 2.png',
+  '/image copy 3.png',
+  '/image copy 4.png',
+  '/image copy 5.png',
+  '/image copy 6.png',
+  '/image copy 7.png',
+];
+
+const MID_BANNER_IMAGES = [
+  '/image copy 8.png',
+  '/image copy 9.png',
 ];
 
 export const Home: React.FC = () => {
@@ -30,9 +40,13 @@ export const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [productPage, setProductPage] = useState(0);
   const [currentBanner, setCurrentBanner] = useState(0);
+  const [currentMidBanner, setCurrentMidBanner] = useState(0);
   const bannerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const midBannerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const midTouchStartX = useRef<number>(0);
+  const midTouchEndX = useRef<number>(0);
   const navigate = useNavigate();
 
   const ITEMS_PER_PAGE = 4;
@@ -45,12 +59,22 @@ export const Home: React.FC = () => {
     }, 4000);
   }, []);
 
+  // Mid banner carousel auto-slide
+  const startMidBannerAutoSlide = useCallback(() => {
+    if (midBannerIntervalRef.current) clearInterval(midBannerIntervalRef.current);
+    midBannerIntervalRef.current = setInterval(() => {
+      setCurrentMidBanner(prev => (prev + 1) % MID_BANNER_IMAGES.length);
+    }, 5000);
+  }, []);
+
   useEffect(() => {
     startBannerAutoSlide();
+    startMidBannerAutoSlide();
     return () => {
       if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
+      if (midBannerIntervalRef.current) clearInterval(midBannerIntervalRef.current);
     };
-  }, [startBannerAutoSlide]);
+  }, [startBannerAutoSlide, startMidBannerAutoSlide]);
 
   const goToBanner = (index: number) => {
     setCurrentBanner(index);
@@ -65,6 +89,11 @@ export const Home: React.FC = () => {
   const nextBanner = () => {
     setCurrentBanner(prev => (prev + 1) % BANNER_IMAGES.length);
     startBannerAutoSlide();
+  };
+
+  const goToMidBanner = (index: number) => {
+    setCurrentMidBanner(index);
+    startMidBannerAutoSlide();
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -144,7 +173,7 @@ export const Home: React.FC = () => {
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Banner Carousel */}
       <section
-        className="relative w-full overflow-hidden rounded-b-xl"
+        className="relative w-full overflow-hidden rounded-xl lg:max-w-6xl lg:mx-auto lg:max-h-[550px]"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -158,7 +187,7 @@ export const Home: React.FC = () => {
               <img
                 src={src}
                 alt={`Smart Cleaners Banner ${index + 1}`}
-                className="w-full h-auto object-cover"
+                className="w-full h-auto object-cover rounded-xl"
                 loading={index === 0 ? 'eager' : 'lazy'}
                 draggable={false}
               />
@@ -281,6 +310,54 @@ export const Home: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* Mid-Page Promotional Banners */}
+      <section
+        className="relative w-full overflow-hidden rounded-xl lg:max-w-6xl lg:mx-auto lg:max-h-[550px]"
+        onTouchStart={(e) => { midTouchStartX.current = e.touches[0].clientX; }}
+        onTouchMove={(e) => { midTouchEndX.current = e.touches[0].clientX; }}
+        onTouchEnd={() => {
+          const diff = midTouchStartX.current - midTouchEndX.current;
+          if (Math.abs(diff) > 50) {
+            if (diff > 0) setCurrentMidBanner(prev => (prev + 1) % MID_BANNER_IMAGES.length);
+            else setCurrentMidBanner(prev => (prev - 1 + MID_BANNER_IMAGES.length) % MID_BANNER_IMAGES.length);
+            startMidBannerAutoSlide();
+          }
+        }}
+      >
+        <div
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${currentMidBanner * 100}%)` }}
+        >
+          {MID_BANNER_IMAGES.map((src, index) => (
+            <div key={index} className="w-full flex-shrink-0">
+              <img
+                src={src}
+                alt={`Promotional Banner ${index + 1}`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                draggable={false}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Dot Indicators */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+          {MID_BANNER_IMAGES.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToMidBanner(index)}
+              className={`rounded-full transition-all duration-300 ${currentMidBanner === index
+                ? 'w-6 h-2.5 bg-white'
+                : 'w-2.5 h-2.5 bg-white/50 hover:bg-white/75'
+                }`}
+              aria-label={`Go to promo banner ${index + 1}`}
+            />
+          ))}
+        </div>
+      </section>
+
       {featuredProducts.length > 0 && (
         <section className="px-4 space-y-4">
           <h2 className="text-section">Featured Products</h2>
@@ -311,49 +388,42 @@ export const Home: React.FC = () => {
               date: "01/04/26",
               rating: 5,
               text: "I recently purchased from Smart Cleaners and had a wonderful experience. The cleaner quality feels effective and reliable overall. Delivery arrived on time.",
-              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Priya%20Sharma_DPHXX3YTAR_2026-05-28_1.jpg"
+              photo: "/image copy 10.png"
             },
             {
               name: "Aarti Joshi",
               date: "20/04/26",
               rating: 5,
               text: "Shopping from Smart Cleaners was a wonderful experience overall. The quality exceeded my expectations honestly. Everything arrived safely with proper packaging.",
-              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Aarti Joshi_UR9ICCS4RU_2026-05-28_1.jpg"
+              photo: "/image copy 11.png"
             },
             {
               name: "Ritu Malhotra",
               date: "17/04/26",
               rating: 5,
               text: "I am really happy with my order from Smart Cleaners. The cleaner quality feels excellent and long lasting. Delivery service was fast and hassle free.",
-              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Ritu Malhotra_PKGZOEB9RF_2026-05-28_1.jpg"
+              photo: "/image copy 12.png"
             },
             {
               name: "Shalini Gupta",
               date: "15/04/26",
               rating: 5,
               text: "Smart Cleaners provided an excellent shopping experience for me. The product quality feels reliable and effective overall. Everything arrived safely.",
-              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Shalini Gupta_4WG0KOYU34_2026-05-28_1.jpg"
+              photo: "/image copy 13.png"
             },
             {
               name: "Neha Kapoor",
               date: "13/04/26",
               rating: 5,
               text: "I had a smooth shopping experience with Smart Cleaners recently. The quality feels dependable and premium overall. Delivery arrived quickly without any issues.",
-              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Neha Kapoor_P1HI2V5KSI_2026-05-28_1.jpg"
+              photo: "/image copy 14.png"
             },
             {
               name: "Meera Iyer",
               date: "11/04/26",
               rating: 5,
               text: "Shopping from Smart Cleaners was a really good experience overall. The cleaner quality feels premium and worth the money. Everything matched perfectly.",
-              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Meera Iyer_QYWS20R8YO_2026-05-28_1.jpg"
-            },
-            {
-              name: "Pooja Singh",
-              date: "09/04/26",
-              rating: 5,
-              text: "I recently ordered from Smart Cleaners and loved the experience. The product quality exceeded my expectations completely. Delivery service was smooth.",
-              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Pooja Singh_2S843WVPHQ_2026-05-28_1.jpg"
+              photo: "/image copy 15.png"
             }
           ].map((review, index) => (
             <div key={index} className="card-elevated space-y-0 min-w-[280px] max-w-[320px] flex-shrink-0 snap-start overflow-hidden">
