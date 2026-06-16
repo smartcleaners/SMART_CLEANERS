@@ -1,20 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Category, Product, Combo, firebaseService } from '@/lib/firebase';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ComboCard } from '@/components/combos/ComboCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ShoppingBag, 
-  Star, 
-  Award, 
-  Truck, 
-  Shield, 
+import {
+  ShoppingBag,
+  Star,
+  Award,
+  Truck,
+  Shield,
   Clock,
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
+
+const BANNER_IMAGES = [
+  'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-1600,fo-auto/6a16dd7200988fc1e9cb83dc/template/1779973646117_DR0JRTDHPL_2026-05-28_1.png',
+  'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-1600,fo-auto/6a16dd7200988fc1e9cb83dc/template/1779973636658_JDNJNX8ZF1_2026-05-28_1.png',
+  'https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:f-webp,w-1600,fo-auto/6a16dd7200988fc1e9cb83dc/template/1779973636658_716JXYEM9L_2026-05-28_2.png',
+];
 
 export const Home: React.FC = () => {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
@@ -23,9 +29,59 @@ export const Home: React.FC = () => {
   const [featuredCombos, setFeaturedCombos] = useState<Combo[]>([]);
   const [loading, setLoading] = useState(true);
   const [productPage, setProductPage] = useState(0);
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const bannerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
   const navigate = useNavigate();
-  
+
   const ITEMS_PER_PAGE = 4;
+
+  // Banner carousel auto-slide
+  const startBannerAutoSlide = useCallback(() => {
+    if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
+    bannerIntervalRef.current = setInterval(() => {
+      setCurrentBanner(prev => (prev + 1) % BANNER_IMAGES.length);
+    }, 4000);
+  }, []);
+
+  useEffect(() => {
+    startBannerAutoSlide();
+    return () => {
+      if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
+    };
+  }, [startBannerAutoSlide]);
+
+  const goToBanner = (index: number) => {
+    setCurrentBanner(index);
+    startBannerAutoSlide();
+  };
+
+  const prevBanner = () => {
+    setCurrentBanner(prev => (prev - 1 + BANNER_IMAGES.length) % BANNER_IMAGES.length);
+    startBannerAutoSlide();
+  };
+
+  const nextBanner = () => {
+    setCurrentBanner(prev => (prev + 1) % BANNER_IMAGES.length);
+    startBannerAutoSlide();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextBanner();
+      else prevBanner();
+    }
+  };
 
   // Helper function to sort products by serialNo
   const sortBySerialNo = (products: Product[]): Product[] => {
@@ -45,18 +101,18 @@ export const Home: React.FC = () => {
           firebaseService.getProducts(),
           firebaseService.getFeaturedCombos()
         ]);
-        
+
         setAllCategories(categoriesData);
         setAllProducts(productsData);
-        
+
         const fiveLiterProducts = productsData
-          .filter(p => 
-            p.weight?.includes('5') && 
+          .filter(p =>
+            p.weight?.includes('5') &&
             (p.weight?.toLowerCase().includes('liter') || p.weight?.toLowerCase().includes('l')) &&
-            p.salePrice && 
+            p.salePrice &&
             p.salePrice > 0
           );
-        
+
         setFeaturedProducts(fiveLiterProducts.slice(0, 4));
         setFeaturedCombos(combosData.slice(0, 3));
       } catch (error) {
@@ -86,37 +142,45 @@ export const Home: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Hero Section */}
-      <section className="gradient-hero text-white px-4 py-12">
-        <div className="space-y-6 animate-fade-in">
-          <div className="space-y-4">
-            <Badge className="bg-white/20 text-white border-white/30">
-              Professional Grade Solutions
-            </Badge>
-            <h1 className="text-hero">
-              Premium Cleaning Solutions for Hotels & Restaurants
-            </h1>
-            <p className="text-lg opacity-90 max-w-2xl">
-              Professional-grade cleaning chemicals trusted by top hotels and restaurants. 
-              Bulk pricing, fast delivery, guaranteed quality.
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button 
-              className="btn-cta"
-              onClick={() => navigate('/bulk-orders')}
-            >
-              <ShoppingBag className="h-5 w-5 mr-2" />
-              Shop Bulk Orders
-            </Button>
-            <Button 
-              variant="outline" 
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
-            >
-              Request Quote
-            </Button>
-          </div>
+      {/* Banner Carousel */}
+      <section
+        className="relative w-full overflow-hidden rounded-b-xl"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${currentBanner * 100}%)` }}
+        >
+          {BANNER_IMAGES.map((src, index) => (
+            <div key={index} className="w-full flex-shrink-0">
+              <img
+                src={src}
+                alt={`Smart Cleaners Banner ${index + 1}`}
+                className="w-full h-auto object-cover"
+                loading={index === 0 ? 'eager' : 'lazy'}
+                draggable={false}
+              />
+            </div>
+          ))}
+        </div>
+
+
+
+        {/* Dot Indicators */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+          {BANNER_IMAGES.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToBanner(index)}
+              className={`rounded-full transition-all duration-300 ${currentBanner === index
+                ? 'w-6 h-2.5 bg-white'
+                : 'w-2.5 h-2.5 bg-white/50 hover:bg-white/75'
+                }`}
+              aria-label={`Go to banner ${index + 1}`}
+            />
+          ))}
         </div>
       </section>
 
@@ -142,8 +206,8 @@ export const Home: React.FC = () => {
         <section className="px-4 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-section">Featured Combo Deals</h2>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => navigate('/combos')}
               className="text-primary"
@@ -151,11 +215,11 @@ export const Home: React.FC = () => {
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
-          
+
           <div className="space-y-4">
             {featuredCombos.map((combo) => (
-              <ComboCard 
-                key={combo.id} 
+              <ComboCard
+                key={combo.id}
                 combo={combo}
                 className="animate-slide-up"
               />
@@ -164,14 +228,14 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-    
+
 
       {/* All Products Section with Pagination - SORTED BY SERIALNO */}
       <section className="px-4 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-section">Our Products</h2>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => navigate('/categories')}
             className="text-primary"
@@ -179,12 +243,12 @@ export const Home: React.FC = () => {
             View All <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
-        
+
         {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {sortBySerialNo(paginatedProducts).map((product) => (
-            <ProductCard 
-              key={product.id} 
+            <ProductCard
+              key={product.id}
               product={product}
               className="animate-scale-in"
               onClick={() => navigate(`/products/${product.id}`)}
@@ -217,14 +281,14 @@ export const Home: React.FC = () => {
           </div>
         )}
       </section>
-        {featuredProducts.length > 0 && (
+      {featuredProducts.length > 0 && (
         <section className="px-4 space-y-4">
           <h2 className="text-section">Featured Products</h2>
-          
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {featuredProducts.map((product) => (
-              <ProductCard 
-                key={product.id} 
+              <ProductCard
+                key={product.id}
                 product={product}
                 className="animate-scale-in"
                 onClick={() => navigate(`/products/${product.id}`)}
@@ -236,35 +300,93 @@ export const Home: React.FC = () => {
       )
       }
 
-      {/* Testimonials */}
+      {/* Customer Reviews */}
       <section className="px-4 space-y-4 bg-muted py-8 -mx-4">
-        <h2 className="text-section text-center">Trusted by Industry Leaders</h2>
-        
-        <div className="grid gap-4 md:grid-cols-2 max-w-4xl mx-auto">
+        <h2 className="text-section text-center">What Our Customers Say</h2>
+
+        <div className="flex gap-4 overflow-x-auto pb-4 px-4 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {[
             {
-              name: "Grand Hotel Mumbai",
+              name: "Priya Sharma",
+              date: "01/04/26",
               rating: 5,
-              text: "Excellent quality products with consistent results. Fast delivery and great bulk pricing.",
-              role: "Housekeeping Manager"
+              text: "I recently purchased from Smart Cleaners and had a wonderful experience. The cleaner quality feels effective and reliable overall. Delivery arrived on time.",
+              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Priya%20Sharma_DPHXX3YTAR_2026-05-28_1.jpg"
             },
             {
-              name: "Spice Route Restaurant",
+              name: "Aarti Joshi",
+              date: "20/04/26",
               rating: 5,
-              text: "Professional grade cleaners that keep our kitchen spotless. Highly recommended for restaurants.",
-              role: "Operations Manager"
+              text: "Shopping from Smart Cleaners was a wonderful experience overall. The quality exceeded my expectations honestly. Everything arrived safely with proper packaging.",
+              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Aarti Joshi_UR9ICCS4RU_2026-05-28_1.jpg"
+            },
+            {
+              name: "Ritu Malhotra",
+              date: "17/04/26",
+              rating: 5,
+              text: "I am really happy with my order from Smart Cleaners. The cleaner quality feels excellent and long lasting. Delivery service was fast and hassle free.",
+              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Ritu Malhotra_PKGZOEB9RF_2026-05-28_1.jpg"
+            },
+            {
+              name: "Shalini Gupta",
+              date: "15/04/26",
+              rating: 5,
+              text: "Smart Cleaners provided an excellent shopping experience for me. The product quality feels reliable and effective overall. Everything arrived safely.",
+              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Shalini Gupta_4WG0KOYU34_2026-05-28_1.jpg"
+            },
+            {
+              name: "Neha Kapoor",
+              date: "13/04/26",
+              rating: 5,
+              text: "I had a smooth shopping experience with Smart Cleaners recently. The quality feels dependable and premium overall. Delivery arrived quickly without any issues.",
+              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Neha Kapoor_P1HI2V5KSI_2026-05-28_1.jpg"
+            },
+            {
+              name: "Meera Iyer",
+              date: "11/04/26",
+              rating: 5,
+              text: "Shopping from Smart Cleaners was a really good experience overall. The cleaner quality feels premium and worth the money. Everything matched perfectly.",
+              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Meera Iyer_QYWS20R8YO_2026-05-28_1.jpg"
+            },
+            {
+              name: "Pooja Singh",
+              date: "09/04/26",
+              rating: 5,
+              text: "I recently ordered from Smart Cleaners and loved the experience. The product quality exceeded my expectations completely. Delivery service was smooth.",
+              photo: "https://d1311wbk6unapo.cloudfront.net/NushopCatalogue/tr:w-600,f-webp,fo-auto/6a16dd7200988fc1e9cb83dc/testimonial/Pooja Singh_2S843WVPHQ_2026-05-28_1.jpg"
             }
-          ].map((testimonial, index) => (
-            <div key={index} className="card-elevated p-4 mx-4 space-y-3">
-              <div className="flex items-center gap-2">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-cta text-cta" />
-                ))}
-              </div>
-              <p className="text-sm">{testimonial.text}</p>
-              <div className="text-xs text-muted-foreground">
-                <p className="font-medium">{testimonial.name}</p>
-                <p>{testimonial.role}</p>
+          ].map((review, index) => (
+            <div key={index} className="card-elevated space-y-0 min-w-[280px] max-w-[320px] flex-shrink-0 snap-start overflow-hidden">
+              {/* Product usage photo */}
+              {review.photo && (
+                <img
+                  src={review.photo}
+                  alt={`Product review by ${review.name}`}
+                  className="w-full h-48 object-cover"
+                  loading="lazy"
+                />
+              )}
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-xs text-white flex-shrink-0"
+                    style={{ backgroundColor: ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#06b6d4', '#ef4444'][index] }}
+                  >
+                    {review.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{review.name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex">
+                        {[...Array(review.rating)].map((_, i) => (
+                          <Star key={i} className="h-3 w-3 fill-cta text-cta" />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{review.date}</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{review.text}</p>
               </div>
             </div>
           ))}
@@ -277,7 +399,7 @@ export const Home: React.FC = () => {
         <p className="text-muted-foreground">
           Get special pricing for orders of 50+ units. Contact us for custom quotes.
         </p>
-        <Button 
+        <Button
           className="btn-cta"
           onClick={() => navigate('/bulk-orders')}
         >
