@@ -13,6 +13,7 @@ import { Home } from "./pages/Home";
 import { Categories } from "./pages/Categories";
 import { Combos } from "./pages/Combos";
 import { BulkOrders } from "./pages/BulkOrders";
+import { BulkOrderProductDetail } from "./pages/BulkOrderProductDetail";
 import NotFound from "./pages/NotFound";
 import CartPage from "./pages/CartPage";
 import { CheckOut } from "./pages/CheckOut";
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/combos" element={<Combos />} />
                 <Route path="/bulk-orders" element={<BulkOrders />} />
+                <Route path="/bulk-orders/:slug" element={<BulkOrderProductDetail />} />
                 <Route path="/products/:productId" element={<ProductDetails />} />
                 <Route path="/about" element={<AboutUs />} />
                 <Route path="/login" element={<LoginPage />} />

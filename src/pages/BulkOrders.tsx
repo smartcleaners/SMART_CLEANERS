@@ -1,235 +1,271 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { 
-  Warehouse, 
-  Calculator, 
-  Phone, 
-  Mail, 
-  Clock, 
-  TrendingDown,
-  Building2,
-  Users,
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { db } from '@/lib/firebase';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import {
+  MessageCircle,
+  Search,
+  Filter,
   Package,
-  CheckCircle 
+  CheckCircle,
+  Star,
+  Truck,
+  Shield,
+  Phone,
+  ChevronRight,
+  Clock,
+  Award,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-const bulkTiers = [
-  {
-    name: 'Starter Bulk',
-    minQuantity: 10,
-    maxQuantity: 49,
-    discount: '15%',
-    description: 'Perfect for small hotels and cafes',
-    features: ['15% discount on all products', 'Free local delivery', 'Email support'],
-    color: 'bg-secondary'
-  },
-  {
-    name: 'Business Bulk',
-    minQuantity: 50,
-    maxQuantity: 199,
-    discount: '25%',
-    description: 'Ideal for restaurants and mid-size hotels',
-    features: ['25% discount on all products', 'Priority delivery', 'Phone & email support', 'Dedicated account manager'],
-    color: 'bg-primary',
-    popular: true
-  },
-  {
-    name: 'Enterprise Bulk',
-    minQuantity: 200,
-    maxQuantity: null,
-    discount: '35%',
-    description: 'Best for hotel chains and large establishments',
-    features: ['Up to 35% discount', 'Same-day delivery available', '24/7 support', 'Custom packaging', 'Flexible payment terms'],
-    color: 'bg-cta'
-  }
-];
+const WHATSAPP_NUMBER = '919014632639';
 
-const industries = [
-  { name: 'Hotels & Resorts', icon: Building2, description: 'Housekeeping & maintenance' },
-  { name: 'Restaurants', icon: Users, description: 'Kitchen & dining area cleaning' },
-  { name: 'Cafes & QSRs', icon: Package, description: 'Daily cleaning essentials' },
-];
+interface BulkProduct {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  image: string;
+  priceRange: string;
+  moq: number;
+  unit: string;
+  features: string[];
+  isActive: boolean;
+  createdAt: any;
+}
+
+const WHATSAPP_CTA = (productName?: string) => {
+  const msg = productName
+    ? `Hi, I'm interested in bulk pricing for *${productName}*. Please share details.`
+    : `Hi, I'm interested in bulk orders from Smart Cleaners. Please share your catalog & pricing.`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+};
 
 export const BulkOrders: React.FC = () => {
-  const [selectedTier, setSelectedTier] = useState<number | null>(null);
+  const navigate = useNavigate();
+  const [products, setProducts] = useState<BulkProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'bulkProducts'),
+      orderBy('createdAt', 'desc')
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as BulkProduct[];
+      setProducts(data.filter(p => p.isActive));
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching bulk products:", error);
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const categories = ['All', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+
+  const filtered = products.filter(p => {
+    const matchCat = activeCategory === 'All' || p.category === activeCategory;
+    const q = searchQuery.toLowerCase();
+    const matchSearch = !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
+    return matchCat && matchSearch;
+  });
 
   return (
-    <div className="space-y-8 px-4 py-6">
-      {/* Header */}
-      <section className="text-center space-y-4">
-        <Warehouse className="h-10 w-10 text-primary mx-auto" />
-        <div className="space-y-2">
-          <h1 className="text-section">Bulk Orders & B2B Pricing</h1>
-          <p className="text-muted-foreground">
-            Special pricing for hotels, restaurants, and commercial establishments
-          </p>
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+      {/* ── Header Section ─────────────────────────────────────────────────── */}
+      <section className="px-4 pt-8 text-center space-y-4">
+        <h1 className="text-section">B2B Wholesale Catalog</h1>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Premium cleaning products for hotels, restaurants, hospitals & commercial establishments.
+          Get competitive wholesale pricing and reliable supply chain solutions.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <a href={WHATSAPP_CTA()} target="_blank" rel="noopener noreferrer">
+            <Button className="btn-cta">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Get Bulk Quote
+            </Button>
+          </a>
+          <a href="tel:+919014632639">
+            <Button variant="outline" className="px-8 py-4 h-auto font-semibold">
+              <Phone className="h-4 w-4 mr-2" />
+              Call +91 9014632639
+            </Button>
+          </a>
         </div>
       </section>
 
-      {/* Quick Stats */}
-      <section className="grid grid-cols-3 gap-4 bg-muted p-4 -mx-4">
-        <div className="text-center">
-          <div className="text-lg font-bold text-primary">500+</div>
-          <div className="text-xs text-muted-foreground">B2B Clients</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-bold text-accent">24hr</div>
-          <div className="text-xs text-muted-foreground">Delivery</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-bold text-cta">35%</div>
-          <div className="text-xs text-muted-foreground">Max Savings</div>
-        </div>
-      </section>
-
-      {/* Industries We Serve */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-center">Industries We Serve</h2>
-        <div className="space-y-3">
-          {industries.map((industry, index) => {
-            const Icon = industry.icon;
-            return (
-              <Card key={index} className="p-4 flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">{industry.name}</h3>
-                  <p className="text-sm text-muted-foreground">{industry.description}</p>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Bulk Pricing Tiers */}
-      <section className="space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold flex items-center justify-center gap-2">
-            <TrendingDown className="h-5 w-5 text-accent" />
-            Bulk Pricing Tiers
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            The more you order, the more you save
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {bulkTiers.map((tier, index) => (
-            <Card 
-              key={index} 
-              className={`p-4 space-y-4 cursor-pointer transition-all ${
-                selectedTier === index ? 'ring-2 ring-primary shadow-lg' : ''
-              } ${tier.popular ? 'border-primary' : ''}`}
-              onClick={() => setSelectedTier(selectedTier === index ? null : index)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{tier.name}</h3>
-                    {tier.popular && (
-                      <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{tier.description}</p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">
-                      {tier.minQuantity}+ units
-                    </span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="font-bold text-accent">{tier.discount} off</span>
-                  </div>
-                </div>
-                <div className={`p-2 rounded-full ${tier.color} bg-opacity-20`}>
-                  <Calculator className="h-4 w-4" />
-                </div>
-              </div>
-
-              {selectedTier === index && (
-                <div className="space-y-3 pt-4 border-t animate-fade-in">
-                  <div className="space-y-2">
-                    {tier.features.map((feature, fIndex) => (
-                      <div key={fIndex} className="flex items-center gap-3 text-sm">
-                        <CheckCircle className="h-4 w-4 text-accent flex-shrink-0" />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <Button className="btn-primary w-full">
-                    Request {tier.name} Quote
-                  </Button>
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-center">Get Your Custom Quote</h2>
-        
-        <div className="space-y-3">
-          <Card className="p-4 flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <Phone className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-medium">Call Us</h3>
-              <p className="text-sm text-muted-foreground">+91 9014632639/+91 8801800362</p>
-            </div>
-          </Card>
-
-          <Card className="p-4 flex items-center gap-4">
-            <div className="bg-accent/10 p-3 rounded-full">
-              <Mail className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <h3 className="font-medium">Email Us</h3>
-              <p className="text-sm text-muted-foreground">smartcleaners.shop@gmail.com</p>
-            </div>
-          </Card>
-        </div>
-
-        <Button className="btn-cta w-full">
-          <Clock className="h-4 w-4 mr-2" />
-          Request Bulk Quote Now
-        </Button>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="bg-gradient-to-r from-primary/5 to-accent/5 p-6 -mx-4 space-y-4">
-        <h3 className="font-semibold text-primary">Why Choose Smart Cleaners for Bulk Orders?</h3>
-        <div className="space-y-3 text-sm">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
-            <div>
-              <strong>Competitive Pricing:</strong> Best wholesale rates in the market with transparent pricing structure.
-            </div>
+      {/* ── Trust Indicators ─────────────────────────────────────────────── */}
+      <section className="px-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          <div className="text-center p-4 card-elevated">
+            <Shield className="h-8 w-8 text-accent mx-auto mb-2" />
+            <p className="text-sm font-semibold">ISO Certified</p>
           </div>
-          <div className="flex items-start gap-3">
-            <CheckCircle className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
-            <div>
-              <strong>Reliable Supply Chain:</strong> Consistent stock availability and on-time delivery guaranteed.
-            </div>
+          <div className="text-center p-4 card-elevated">
+            <Truck className="h-8 w-8 text-primary mx-auto mb-2" />
+            <p className="text-sm font-semibold">Pan India Delivery</p>
           </div>
-          <div className="flex items-start gap-3">
-            <CheckCircle className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
-            <div>
-              <strong>Quality Assurance:</strong> All products are professionally tested and certified for commercial use.
-            </div>
+          <div className="text-center p-4 card-elevated">
+            <Award className="h-8 w-8 text-cta mx-auto mb-2" />
+            <p className="text-sm font-semibold">B2B Pricing</p>
           </div>
-          <div className="flex items-start gap-3">
-            <CheckCircle className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
-            <div>
-              <strong>Dedicated Support:</strong> Personal account managers and 24/7 customer support for enterprise clients.
-            </div>
+          <div className="text-center p-4 card-elevated">
+            <Star className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+            <p className="text-sm font-semibold">500+ Clients</p>
           </div>
         </div>
+      </section>
+
+      {/* ── Search & Filters ─────────────────────────────────────────────── */}
+      <section className="px-4 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search bulk products..."
+              className="pl-9 h-12"
+            />
+          </div>
+          {categories.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 w-full md:w-auto">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                    activeCategory === cat
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-card text-muted-foreground hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Product Catalog Grid ─────────────────────────────────────────── */}
+      <section className="px-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Available Products</h2>
+          <span className="text-sm text-muted-foreground flex items-center gap-1">
+            <Filter className="h-4 w-4" /> {filtered.length} products
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[40vh]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-20 card-elevated max-w-2xl mx-auto">
+            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No products found</h3>
+            <p className="text-muted-foreground text-sm mb-6">
+              {searchQuery ? `No results for "${searchQuery}"` : 'Our catalog is being updated. Check back soon!'}
+            </p>
+            <a href={WHATSAPP_CTA()} target="_blank" rel="noopener noreferrer">
+              <Button className="btn-primary">
+                Ask on WhatsApp
+              </Button>
+            </a>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {filtered.map((product) => (
+              <ProductCard key={product.id} product={product} onNavigate={(slug) => navigate(`/bulk-orders/${slug}`)} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Bottom CTA ──────────────────────────────────────────────── */}
+      <section className="px-4 py-8 text-center space-y-4">
+        <h2 className="text-section">Ready to Order in Bulk?</h2>
+        <p className="text-muted-foreground max-w-lg mx-auto">
+          Get special pricing for commercial orders. Talk to our B2B team on WhatsApp for custom quotes, samples & fast delivery.
+        </p>
+        <a href={WHATSAPP_CTA()} target="_blank" rel="noopener noreferrer">
+          <Button className="btn-cta mt-2">
+            <Clock className="h-4 w-4 mr-2" />
+            Get Bulk Pricing Now
+          </Button>
+        </a>
       </section>
     </div>
+  );
+};
+
+// ─── Product Card ─────────────────────────────────────────────────────────────
+interface ProductCardProps {
+  product: BulkProduct;
+  onNavigate: (slug: string) => void;
+}
+
+const ProductCard: React.FC<ProductCardProps> = ({ product, onNavigate }) => {
+  return (
+    <article 
+      className="card-elevated flex flex-col cursor-pointer overflow-hidden animate-scale-in"
+      onClick={() => onNavigate(product.slug)}
+    >
+      <div className="relative aspect-[4/3] bg-muted/30 p-4">
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-contain"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <Package className="h-12 w-12 text-muted-foreground/30" />
+          </div>
+        )}
+        {product.category && (
+          <div className="absolute top-2 left-2">
+            <span className="bg-background/90 text-primary text-[10px] font-semibold px-2 py-0.5 rounded border border-border">
+              {product.category}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="p-4 flex flex-col flex-1 space-y-3 border-t border-border/50">
+        <div>
+          <h3 className="font-semibold text-sm line-clamp-2">
+            {product.name}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+            MOQ: {product.moq} {product.unit}
+          </p>
+        </div>
+
+        <div className="mt-auto pt-2">
+          <div className="text-primary font-bold text-sm mb-3">
+            {product.priceRange || 'Contact for Price'}
+          </div>
+          
+          <Button 
+            className="w-full btn-primary h-9 text-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate(product.slug);
+            }}
+          >
+            View Details
+          </Button>
+        </div>
+      </div>
+    </article>
   );
 };
