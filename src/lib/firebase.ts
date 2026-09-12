@@ -125,6 +125,10 @@ export interface StockValidationResult {
   }>;
 }
 
+// Simple in-memory cache to avoid redundant Firestore reads within a session
+let _productsCache: Product[] | null = null;
+let _productsCachePromise: Promise<Product[]> | null = null;
+
 // Firebase service functions
 export const firebaseService = {
   // Fetch categories (client-side sorting to avoid index requirements)
@@ -177,28 +181,41 @@ export const firebaseService = {
 
   // Fetch all active products (client-side sorting to avoid index requirements)
   async getProducts(): Promise<Product[]> {
-    try {
-      const q = query(
-        collection(db, 'products'),
-        where('isActive', '==', true)
-      );
-      const snapshot = await getDocs(q);
-      const products = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Product));
-      
-      // Sort client-side by serialNo (ascending), products without serialNo go to the end
-      return products.sort((a, b) => {
-        if (a.serialNo === undefined && b.serialNo === undefined) return 0;
-        if (a.serialNo === undefined) return 1;
-        if (b.serialNo === undefined) return -1;
-        return a.serialNo - b.serialNo;
-      });
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      throw error;
-    }
+    // Return cache hit instantly
+    if (_productsCache) return _productsCache;
+    // Deduplicate concurrent calls — return the same in-flight promise
+    if (_productsCachePromise) return _productsCachePromise;
+
+    _productsCachePromise = (async () => {
+      try {
+        const q = query(
+          collection(db, 'products'),
+          where('isActive', '==', true)
+        );
+        const snapshot = await getDocs(q);
+        const products = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Product));
+
+        // Sort client-side by serialNo (ascending), products without serialNo go to the end
+        const sorted = products.sort((a, b) => {
+          if (a.serialNo === undefined && b.serialNo === undefined) return 0;
+          if (a.serialNo === undefined) return 1;
+          if (b.serialNo === undefined) return -1;
+          return a.serialNo - b.serialNo;
+        });
+
+        _productsCache = sorted;
+        return sorted;
+      } catch (error) {
+        _productsCachePromise = null; // allow retry on error
+        console.error('Error fetching products:', error);
+        throw error;
+      }
+    })();
+
+    return _productsCachePromise;
   },
 
   // Fetch combos (client-side sorting to avoid index requirements)

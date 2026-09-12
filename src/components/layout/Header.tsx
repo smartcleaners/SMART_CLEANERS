@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Search, X, AlarmClockOff, User2Icon, Menu } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -214,11 +215,13 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden" onClick={() => setMobileMenuOpen(false)}>
-          <div 
-            className="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-card border-r border-border shadow-lg p-6 flex flex-col gap-6"
+      {mobileMenuOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <div
+            className="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-card border-r border-border shadow-2xl p-6 flex flex-col gap-6"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -235,7 +238,8 @@ export const Header: React.FC = () => {
               <Link to="/bulk-orders" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">Bulk Orders</Link>
             </nav>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );

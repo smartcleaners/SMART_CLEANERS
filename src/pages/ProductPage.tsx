@@ -96,7 +96,7 @@ export const ProductDetails: React.FC = () => {
   const isLowStock = product.stock > 0 && product.stock <= 10;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 overflow-x-clip">
       {/* Back Button */}
       <Button
         variant="ghost"
@@ -126,54 +126,9 @@ export const ProductDetails: React.FC = () => {
       {/* Main Product Section */}
       <div className="grid md:grid-cols-2 gap-8 items-start">
         {/* Image Gallery */}
-        <div className="flex flex-col-reverse md:flex-row gap-4 sticky top-24 z-10">
-          {/* Thumbnail Navigation */}
-          {product.images.length > 1 && (
-            <div className="flex md:flex-col items-center md:items-start justify-start gap-2 w-full md:w-20 flex-shrink-0 min-w-0">
-              <Button
-                variant="outline"
-                size="icon"
-                className="md:hidden flex-shrink-0"
-                onClick={() => setSelectedImage(prev => Math.max(0, prev - 1))}
-                disabled={selectedImage === 0}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-
-              <div
-                className="flex md:flex-col gap-3 flex-1 md:flex-none overflow-x-auto md:overflow-y-auto md:overflow-x-hidden scrollbar-hide py-1 min-w-0"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                {product.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${selectedImage === idx ? 'border-primary shadow-sm scale-105' : 'border-border hover:border-primary/50'
-                      }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`${product.name} ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                className="md:hidden flex-shrink-0"
-                onClick={() => setSelectedImage(prev => Math.min(product.images.length - 1, prev + 1))}
-                disabled={selectedImage === product.images.length - 1}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-
+        <div className="flex flex-col gap-4 md:flex-row md:gap-4 md:sticky md:top-24 md:z-10">
           {/* Main Image */}
-          <div className="card-elevated overflow-hidden aspect-square relative w-full md:flex-1 min-h-[300px] bg-white">
+          <div className="card-elevated overflow-hidden aspect-square relative w-full md:flex-1 min-h-[280px] max-h-[90vw] md:max-h-none bg-white order-1 md:order-2">
             <img
               src={product.images[selectedImage] || '/placeholder-product.png'}
               alt={product.name}
@@ -187,6 +142,73 @@ export const ProductDetails: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Thumbnail Navigation */}
+          {product.images.length > 1 && (
+            <div className="order-2 md:order-1 md:w-20 md:flex-shrink-0">
+              {/* Mobile: horizontal scroll strip */}
+              <div className="flex md:hidden items-center gap-2 w-full">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="flex-shrink-0"
+                  onClick={() => setSelectedImage(prev => Math.max(0, prev - 1))}
+                  disabled={selectedImage === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <div
+                  className="flex gap-2 overflow-x-auto py-1 flex-1"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {product.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedImage(idx)}
+                      className={`flex-shrink-0 w-14 h-14 rounded-lg border-2 overflow-hidden transition-all ${selectedImage === idx ? 'border-primary shadow-sm scale-105' : 'border-border hover:border-primary/50'}`}
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.name} ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="flex-shrink-0"
+                  onClick={() => setSelectedImage(prev => Math.min(product.images.length - 1, prev + 1))}
+                  disabled={selectedImage === product.images.length - 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Desktop: vertical thumbnail column */}
+              <div
+                className="hidden md:flex flex-col gap-3 overflow-y-auto"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {product.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${selectedImage === idx ? 'border-primary shadow-sm scale-105' : 'border-border hover:border-primary/50'}`}
+                  >
+                    <img
+                      src={img}
+                      alt={`${product.name} ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
