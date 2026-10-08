@@ -21,7 +21,10 @@ import { ProductDetails } from "./pages/ProductPage";
 import { AboutUs } from "./pages/about";
 import { AccountPage } from "./pages/accountpage";
 import { LoginPage, SignupPage } from "./pages/loginsignup";
-
+import { TermsAndConditions } from "./pages/policies/TermsAndConditions";
+import { PrivacyPolicy } from "./pages/policies/PrivacyPolicy";
+import { ReturnPolicy } from "./pages/policies/ReturnPolicy";
+import { ShippingPolicy } from "./pages/policies/ShippingPolicy";
 const queryClient = new QueryClient();
 
 // ScrollToTop component
@@ -56,7 +59,10 @@ const App = () => (
                 <Route path="/about" element={<AboutUs />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
-
+                <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/return-policy" element={<ReturnPolicy />} />
+                <Route path="/shipping-policy" element={<ShippingPolicy />} />
                 {/* Protected Routes */}
                 <Route
                   path="/account"
